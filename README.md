@@ -3,7 +3,7 @@
 A Go library for service orchestration, inspired by [Conductor][1].
 
 
-# Documentation
+## Documentation
 
 Checkout the [Godoc][2].
 

@@ -25,7 +25,7 @@ func Example() {
 					Timeout: 2 * time.Second,
 					InputTemplate: orchestrator.InputTemplate{
 						"method": "GET",
-						"uri":    "https://jsonplaceholder.typicode.com/todos/${context.input.id}",
+						"uri":    "https://jsonplaceholder.typicode.com/todos/${context.input.todoId}",
 					},
 				},
 				{
@@ -46,7 +46,7 @@ func Example() {
 	}
 
 	decoder := orchestrator.NewDecoder()
-	decoder.AddInput("context", map[string]interface{}{"id": 1})
+	decoder.AddInput("context", map[string]interface{}{"todoId": 1})
 	output, err := task.Execute(context.Background(), decoder)
 	if err != nil {
 		fmt.Println(err)
