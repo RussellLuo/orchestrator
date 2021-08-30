@@ -81,7 +81,7 @@ func TestDecision_Execute(t *testing.T) {
 			inDef: &o.TaskDefinition{
 				Name: "test",
 				InputTemplate: o.InputTemplate{
-					"switch": "$.context.input.value",
+					"switch": "${context.input.value}",
 					"cases": map[int]*o.TaskDefinition{
 						0: {
 							Name: "case_0",

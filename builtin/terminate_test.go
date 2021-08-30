@@ -38,7 +38,7 @@ func TestTerminate(t *testing.T) {
 							Type: builtin.TypeTerminate,
 							InputTemplate: o.InputTemplate{
 								"output": o.Output{
-									"goodbye": "$.say_name.output.name",
+									"goodbye": "${say_name.output.name}",
 								},
 							},
 						},
@@ -48,7 +48,7 @@ func TestTerminate(t *testing.T) {
 							InputTemplate: o.InputTemplate{
 								"func": func(ctx context.Context, decoder *o.Decoder) (o.Output, error) {
 									input := map[string]interface{}{
-										"hello": "$.say_name.output.name",
+										"hello": "${say_name.output.name}",
 									}
 									output := make(map[string]interface{})
 									if err := decoder.Decode(input, &output); err != nil {
