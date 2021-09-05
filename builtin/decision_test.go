@@ -12,112 +12,53 @@ import (
 func TestDecision_Execute(t *testing.T) {
 	tests := []struct {
 		name       string
-		inDef      *o.TaskDefinition
+		inTask     o.Task
 		wantOutput o.Output
 		wantErr    string
 	}{
 		{
 			name: "case hit",
-			inDef: &o.TaskDefinition{
-				Name: "test",
-				InputTemplate: o.InputTemplate{
-					"switch": 0,
-					"cases": map[int]*o.TaskDefinition{
-						0: {
-							Name: "case_0",
-							Type: builtin.TypeFunc,
-							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) {
-									return o.Output{"result": "case_0"}, nil
-								},
-							},
-						},
-					},
-					"default": &o.TaskDefinition{
-						Name: "default",
-						Type: builtin.TypeFunc,
-						InputTemplate: o.InputTemplate{
-							"func": func(context.Context, *o.Decoder) (o.Output, error) {
-								return o.Output{"result": "default"}, nil
-							},
-						},
-					},
-				},
-			},
+			inTask: builtin.NewDecision("test").
+				Switch(0).
+				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+					return o.Output{"result": "case_0"}, nil
+				})).
+				Default(builtin.NewFunc("default").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+					return o.Output{"result": "default"}, nil
+				})),
 			wantOutput: o.Output{"result": "case_0"},
 		},
 		{
 			name: "default hit",
-			inDef: &o.TaskDefinition{
-				Name: "test",
-				InputTemplate: o.InputTemplate{
-					"switch": 1,
-					"cases": map[int]*o.TaskDefinition{
-						0: {
-							Name: "case_0",
-							Type: builtin.TypeFunc,
-							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) {
-									return o.Output{"result": "case_0"}, nil
-								},
-							},
-						},
-					},
-					"default": &o.TaskDefinition{
-						Name: "default",
-						Type: builtin.TypeFunc,
-						InputTemplate: o.InputTemplate{
-							"func": func(context.Context, *o.Decoder) (o.Output, error) {
-								return o.Output{"result": "default"}, nil
-							},
-						},
-					},
-				},
-			},
+			inTask: builtin.NewDecision("test").
+				Switch(1).
+				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+					return o.Output{"result": "case_0"}, nil
+				})).
+				Default(builtin.NewFunc("default").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+					return o.Output{"result": "default"}, nil
+				})),
 			wantOutput: o.Output{"result": "default"},
 		},
 		{
 			name: "switch template",
-			inDef: &o.TaskDefinition{
-				Name: "test",
-				InputTemplate: o.InputTemplate{
-					"switch": "${context.input.value}",
-					"cases": map[int]*o.TaskDefinition{
-						0: {
-							Name: "case_0",
-							Type: builtin.TypeFunc,
-							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) {
-									return o.Output{"result": "case_0"}, nil
-								},
-							},
-						},
-					},
-					"default": &o.TaskDefinition{
-						Name: "default",
-						Type: builtin.TypeFunc,
-						InputTemplate: o.InputTemplate{
-							"func": func(context.Context, *o.Decoder) (o.Output, error) {
-								return o.Output{"result": "default"}, nil
-							},
-						},
-					},
-				},
-			},
+			inTask: builtin.NewDecision("test").
+				Switch("${context.input.value}").
+				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+					return o.Output{"result": "case_0"}, nil
+				})).
+				Default(builtin.NewFunc("default").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+					return o.Output{"result": "default"}, nil
+				})),
 			wantOutput: o.Output{"result": "case_0"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, err := builtin.NewDecision(testOrchestrator, tt.inDef)
-			if err != nil {
-				t.Fatalf("Err: %v", err)
-			}
-
 			decoder := o.NewDecoder()
 			decoder.AddInput("context", map[string]interface{}{"value": 0})
-			output, err := task.Execute(context.Background(), decoder)
+			output, err := tt.inTask.Execute(context.Background(), decoder)
 
 			gotErr := ""
 			if err != nil {

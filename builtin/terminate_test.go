@@ -13,54 +13,30 @@ import (
 func TestTerminate(t *testing.T) {
 	tests := []struct {
 		name       string
-		inDef      *o.TaskDefinition
+		inTask     o.Task
 		wantOutput o.Output
 		wantErr    string
 	}{
 		{
 			name: "terminate",
-			inDef: &o.TaskDefinition{
-				Name:    "greeting",
-				Timeout: time.Second,
-				InputTemplate: o.InputTemplate{
-					"tasks": []*o.TaskDefinition{
-						{
-							Name: "say_name",
-							Type: builtin.TypeFunc,
-							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) {
-									return o.Output{"name": "world"}, nil
-								},
-							},
-						},
-						{
-							Name: "say_goodbye",
-							Type: builtin.TypeTerminate,
-							InputTemplate: o.InputTemplate{
-								"output": o.Output{
-									"goodbye": "${say_name.output.name}",
-								},
-							},
-						},
-						{
-							Name: "say_hello",
-							Type: builtin.TypeFunc,
-							InputTemplate: o.InputTemplate{
-								"func": func(ctx context.Context, decoder *o.Decoder) (o.Output, error) {
-									input := map[string]interface{}{
-										"hello": "${say_name.output.name}",
-									}
-									output := make(map[string]interface{})
-									if err := decoder.Decode(input, &output); err != nil {
-										return nil, err
-									}
-									return output, nil
-								},
-							},
-						},
-					},
-				},
-			},
+			inTask: builtin.NewSerial("greeting").Timeout(time.Second).Tasks(
+				builtin.NewFunc("say_name").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+					return o.Output{"name": "world"}, nil
+				}),
+				builtin.NewTerminate("say_goodbye").Output(o.Output{
+					"goodbye": "${say_name.output.name}",
+				}),
+				builtin.NewFunc("say_hello").Func(func(ctx context.Context, decoder *o.Decoder) (o.Output, error) {
+					input := map[string]interface{}{
+						"hello": "${say_name.output.name}",
+					}
+					output := make(map[string]interface{})
+					if err := decoder.Decode(input, &output); err != nil {
+						return nil, err
+					}
+					return output, nil
+				}),
+			),
 			wantOutput: o.Output{
 				"terminated": true,
 				"goodbye":    "world",
@@ -70,13 +46,8 @@ func TestTerminate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, err := builtin.NewSerial(testOrchestrator, tt.inDef)
-			if err != nil {
-				t.Fatalf("Err: %v", err)
-			}
-
 			decoder := o.NewDecoder()
-			output, err := task.Execute(context.Background(), decoder)
+			output, err := tt.inTask.Execute(context.Background(), decoder)
 
 			gotErr := ""
 			if err != nil {

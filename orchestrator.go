@@ -28,6 +28,7 @@ type TaskDefinition struct {
 
 type Task interface {
 	Definition() *TaskDefinition
+	InputString() string
 	Execute(context.Context, *Decoder) (Output, error)
 }
 

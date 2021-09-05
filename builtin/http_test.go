@@ -11,19 +11,12 @@ import (
 )
 
 func TestHTTP_Execute(t *testing.T) {
-	task, err := builtin.NewHTTP(&orchestrator.TaskDefinition{
-		Name:    "test",
-		Timeout: 2 * time.Second,
-		InputTemplate: orchestrator.InputTemplate{
-			"method": "GET",
-			"uri":    "https://jsonplaceholder.typicode.com/todos/1",
-		},
-	})
-	if err != nil {
-		t.Fatalf("Err: %v", err)
-	}
+	task := builtin.NewHTTP("test").Timeout(2 * time.Second).Get(
+		"https://jsonplaceholder.typicode.com/todos/${context.input.todoId}",
+	)
 
 	decoder := orchestrator.NewDecoder()
+	decoder.AddInput("context", map[string]interface{}{"todoId": 1})
 	output, err := task.Execute(context.Background(), decoder)
 	if err != nil {
 		t.Fatalf("Err: %v", err)

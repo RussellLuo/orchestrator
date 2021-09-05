@@ -10,6 +10,32 @@ import (
 )
 
 func Example() {
+	task := builtin.NewSerial("get_todo_user").Timeout(3*time.Second).Tasks(
+		builtin.NewHTTP("get_todo").Timeout(2*time.Second).Get(
+			"https://jsonplaceholder.typicode.com/todos/${context.input.todoId}",
+		),
+		builtin.NewHTTP("get_user").Timeout(2*time.Second).Get(
+			"https://jsonplaceholder.typicode.com/users/${get_todo.output.body.userId}",
+		),
+	)
+
+	decoder := orchestrator.NewDecoder()
+	decoder.AddInput("context", map[string]interface{}{"todoId": 1})
+	output, err := task.Execute(context.Background(), decoder)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	body := output["body"].(map[string]interface{})
+	fmt.Println(body["name"])
+
+	// Output:
+	// Leanne Graham
+
+}
+
+func Example_construct() {
 	o := orchestrator.New()
 	builtin.RegisterIn(o)
 

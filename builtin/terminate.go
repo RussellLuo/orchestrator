@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/RussellLuo/orchestrator"
 )
@@ -12,30 +13,41 @@ const (
 
 // Terminate is a leaf task that can terminate a series of tasks with a given output.
 type Terminate struct {
-	*orchestrator.TaskDefinition
+	def *orchestrator.TaskDefinition
 
-	input struct {
+	Input struct {
 		Output orchestrator.Output `orchestrator:"output"`
 	}
 }
 
-func NewTerminate(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-	if def.Type != TypeTerminate {
-		def.Type = TypeTerminate
+func NewTerminate(name string) *Terminate {
+	return &Terminate{
+		def: &orchestrator.TaskDefinition{
+			Name: name,
+			Type: TypeTerminate,
+		},
 	}
+}
 
-	return &Terminate{TaskDefinition: def}, nil
+func (t *Terminate) Output(output orchestrator.Output) *Terminate {
+	t.Input.Output = output
+	return t
+}
+
+func (t *Terminate) InputString() string {
+	return fmt.Sprintf("%s(name:%s, output:%v)", t.def.Type, t.def.Name, t.Input.Output)
 }
 
 func (t *Terminate) Definition() *orchestrator.TaskDefinition {
-	return t.TaskDefinition
+	return t.def
 }
 
 func (t *Terminate) Execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
-	if err := decoder.Decode(t.InputTemplate, &t.input); err != nil {
+	output := orchestrator.Output{}
+	if err := decoder.Decode(t.Input.Output, &output); err != nil {
 		return nil, err
 	}
 
-	t.input.Output.SetTerminated()
-	return t.input.Output, nil
+	output.SetTerminated()
+	return output, nil
 }

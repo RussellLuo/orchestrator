@@ -3,6 +3,7 @@ package builtin
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/RussellLuo/orchestrator"
@@ -16,32 +17,6 @@ type Result struct {
 	Name   string
 	Output orchestrator.Output
 	Err    error
-}
-
-func parseInputTasks(o *orchestrator.Orchestrator, inputTemplate orchestrator.InputTemplate, tasks *[]orchestrator.Task) error {
-	var input struct {
-		Tasks []*orchestrator.TaskDefinition `orchestrator:"tasks"`
-	}
-	decoder := orchestrator.NewDecoder().NoRendering()
-	if err := decoder.Decode(inputTemplate, &input); err != nil {
-		return err
-	}
-
-	names := make(map[string]bool) // Detect duplicate task name.
-	for _, d := range input.Tasks {
-		if _, ok := names[d.Name]; ok {
-			return fmt.Errorf("duplicate task name %q", d.Name)
-		}
-		names[d.Name] = true
-
-		task, err := o.Construct(d)
-		if err != nil {
-			return err
-		}
-		*tasks = append(*tasks, task)
-	}
-
-	return nil
 }
 
 func executeWithTimeout(ctx context.Context, decoder *orchestrator.Decoder, timeout time.Duration, f func(context.Context, *orchestrator.Decoder) (orchestrator.Output, error)) (orchestrator.Output, error) {
@@ -69,33 +44,56 @@ func executeWithTimeout(ctx context.Context, decoder *orchestrator.Decoder, time
 
 // Serial is a composite task that is used to execute its subtasks serially.
 type Serial struct {
-	*orchestrator.TaskDefinition
+	def *orchestrator.TaskDefinition
 
-	tasks []orchestrator.Task
+	Input struct {
+		Tasks []orchestrator.Task `orchestrator:"tasks"`
+	}
 }
 
-func NewSerial(o *orchestrator.Orchestrator, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-	if def.Type != TypeSerial {
-		def.Type = TypeSerial
+func NewSerial(name string) *Serial {
+	return &Serial{
+		def: &orchestrator.TaskDefinition{
+			Name: name,
+			Type: TypeSerial,
+		},
 	}
+}
 
-	s := &Serial{TaskDefinition: def}
-	if err := parseInputTasks(o, def.InputTemplate, &s.tasks); err != nil {
-		return nil, err
+func (s *Serial) Timeout(timeout time.Duration) *Serial {
+	s.def.Timeout = timeout
+	return s
+}
+
+func (s *Serial) Tasks(tasks ...orchestrator.Task) *Serial {
+	s.Input.Tasks = tasks
+	return s
+}
+
+func (s *Serial) InputString() string {
+	var inputStrings []string
+	for _, t := range s.Input.Tasks {
+		inputStrings = append(inputStrings, t.InputString())
 	}
-	return s, nil
+	return fmt.Sprintf(
+		"%s(name:%s, timeout:%s, tasks:[%s])",
+		s.def.Type,
+		s.def.Name,
+		s.def.Timeout,
+		strings.Join(inputStrings, ", "),
+	)
 }
 
 func (s *Serial) Definition() *orchestrator.TaskDefinition {
-	return s.TaskDefinition
+	return s.def
 }
 
 func (s *Serial) Execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
-	return executeWithTimeout(ctx, decoder, s.Timeout, s.execute)
+	return executeWithTimeout(ctx, decoder, s.def.Timeout, s.execute)
 }
 
 func (s *Serial) execute(ctx context.Context, decoder *orchestrator.Decoder) (output orchestrator.Output, err error) {
-	for _, t := range s.tasks {
+	for _, t := range s.Input.Tasks {
 		output, err = t.Execute(ctx, decoder)
 		if err != nil {
 			return nil, err

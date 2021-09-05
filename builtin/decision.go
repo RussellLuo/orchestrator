@@ -3,6 +3,7 @@ package builtin
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/RussellLuo/orchestrator"
 )
@@ -13,76 +14,83 @@ const (
 
 // Decision is a composite task that is is similar to the `switch` statement in Go.
 type Decision struct {
-	*orchestrator.TaskDefinition
+	def *orchestrator.TaskDefinition
 
-	input struct {
+	Input struct {
 		Switch  interface{}                       `orchestrator:"switch"`
 		Cases   map[interface{}]orchestrator.Task `orchestrator:"cases"`
 		Default orchestrator.Task                 `orchestrator:"default"`
 	}
 }
 
-func NewDecision(o *orchestrator.Orchestrator, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-	if def.Type != TypeDecision {
-		def.Type = TypeDecision
+func NewDecision(name string) *Decision {
+	return &Decision{
+		def: &orchestrator.TaskDefinition{
+			Name: name,
+			Type: TypeDecision,
+		},
+	}
+}
+
+func (d *Decision) Timeout(timeout time.Duration) *Decision {
+	d.def.Timeout = timeout
+	return d
+}
+
+func (d *Decision) Switch(s interface{}) *Decision {
+	d.Input.Switch = s
+	return d
+}
+
+func (d *Decision) Case(c interface{}, task orchestrator.Task) *Decision {
+	if d.Input.Cases == nil {
+		d.Input.Cases = make(map[interface{}]orchestrator.Task)
+	}
+	d.Input.Cases[c] = task
+	return d
+}
+
+func (d *Decision) Default(task orchestrator.Task) *Decision {
+	d.Input.Default = task
+	return d
+}
+
+func (d *Decision) InputString() string {
+	casesInputStrings := make(map[interface{}]string)
+	for v, t := range d.Input.Cases {
+		casesInputStrings[v] = t.InputString()
 	}
 
-	d := &Decision{TaskDefinition: def}
-
-	var input struct {
-		Switch  interface{}                                  `orchestrator:"switch"`
-		Cases   map[interface{}]*orchestrator.TaskDefinition `orchestrator:"cases"`
-		Default *orchestrator.TaskDefinition                 `orchestrator:"default"`
-	}
-	decoder := orchestrator.NewDecoder().NoRendering()
-	if err := decoder.Decode(def.InputTemplate, &input); err != nil {
-		return nil, err
+	var defaultInputString string
+	if d.Input.Default != nil {
+		defaultInputString = d.Input.Default.InputString()
 	}
 
-	d.input.Switch = input.Switch
-
-	// Build cases
-	d.input.Cases = make(map[interface{}]orchestrator.Task)
-	names := make(map[string]bool) // Detect duplicate task name.
-	for v, td := range input.Cases {
-		if _, ok := names[td.Name]; ok {
-			return nil, fmt.Errorf("duplicate task name %q", td.Name)
-		}
-		names[td.Name] = true
-
-		task, err := o.Construct(td)
-		if err != nil {
-			return nil, err
-		}
-		d.input.Cases[v] = task
-	}
-
-	// Build default
-	if input.Default != nil {
-		task, err := o.Construct(input.Default)
-		if err != nil {
-			return nil, err
-		}
-		d.input.Default = task
-	}
-
-	return d, nil
+	return fmt.Sprintf(
+		"%s(name:%s, timeout:%s, switch:%v, cases:%v, default:%s)",
+		d.def.Type,
+		d.def.Name,
+		d.def.Timeout,
+		d.Input.Switch,
+		casesInputStrings,
+		defaultInputString,
+	)
 }
 
 func (d *Decision) Definition() *orchestrator.TaskDefinition {
-	return d.TaskDefinition
+	return d.def
 }
 
 func (d *Decision) Execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
 	var switchValue interface{}
-	if err := decoder.Decode(d.input.Switch, &switchValue); err != nil {
+	if err := decoder.Decode(d.Input.Switch, &switchValue); err != nil {
 		return nil, err
 	}
 
-	task, ok := d.input.Cases[switchValue]
+	task, ok := d.Input.Cases[switchValue]
 	if !ok {
-		if d.input.Default != nil {
-			return d.input.Default.Execute(ctx, decoder)
+		if d.Input.Default != nil {
+			return d.Input.Default.Execute(ctx, decoder)
 		}
 		return nil, nil
 	}
