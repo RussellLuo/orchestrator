@@ -6,12 +6,14 @@ import (
 	"reflect"
 
 	"github.com/RussellLuo/orchestrator"
-	"github.com/mitchellh/mapstructure"
+	"github.com/RussellLuo/structool"
 )
 
 // RegisterIn registers all the built-in tasks in the given orchestrator.
 func RegisterIn(o *orchestrator.Orchestrator) {
-	decoder := &inputDecoder{o: o}
+	decoder := structool.New().TagName("orchestrator").DecodeHook(
+		decodeDefinitionToTask(o),
+	)
 
 	o.MustRegister(TypeSerial, func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
 		s := &Serial{def: def}
@@ -68,74 +70,58 @@ func RegisterIn(o *orchestrator.Orchestrator) {
 	})
 }
 
-type inputDecoder struct {
-	o *orchestrator.Orchestrator
-}
+func decodeDefinitionToTask(o *orchestrator.Orchestrator) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+	return func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+		return func(from, to reflect.Value) (interface{}, error) {
 
-func (d *inputDecoder) Decode(in interface{}, out interface{}) error {
-	config := &mapstructure.DecoderConfig{
-		DecodeHook: d.decodeHookFunc,
-		TagName:    "orchestrator",
-		Result:     out,
-	}
+			switch v := from.Interface().(type) {
+			case *orchestrator.TaskDefinition:
+				task, err := o.Construct(v)
+				if err != nil {
+					return nil, err
+				}
+				return task, nil
 
-	decoder, err := mapstructure.NewDecoder(config)
-	if err != nil {
-		return err
-	}
+			case []*orchestrator.TaskDefinition:
+				var tasks []orchestrator.Task
 
-	return decoder.Decode(in)
-}
+				names := make(map[string]bool) // Detect duplicate task name.
+				for _, def := range v {
+					if _, ok := names[def.Name]; ok {
+						return nil, fmt.Errorf("duplicate task name %q", def.Name)
+					}
+					names[def.Name] = true
 
-func (d *inputDecoder) decodeHookFunc(from, to reflect.Value) (interface{}, error) {
-	value := from.Interface()
+					task, err := o.Construct(def)
+					if err != nil {
+						return nil, err
+					}
+					tasks = append(tasks, task)
+				}
 
-	switch v := value.(type) {
-	case *orchestrator.TaskDefinition:
-		task, err := d.o.Construct(v)
-		if err != nil {
-			return nil, err
+				return tasks, nil
+
+			case map[interface{}]*orchestrator.TaskDefinition:
+				tasks := make(map[interface{}]orchestrator.Task)
+
+				names := make(map[string]bool) // Detect duplicate task name.
+				for key, def := range v {
+					if _, ok := names[def.Name]; ok {
+						return nil, fmt.Errorf("duplicate task name %q", def.Name)
+					}
+					names[def.Name] = true
+
+					task, err := o.Construct(def)
+					if err != nil {
+						return nil, err
+					}
+					tasks[key] = task
+				}
+
+				return tasks, nil
+			}
+
+			return next(from, to)
 		}
-		return task, nil
-
-	case []*orchestrator.TaskDefinition:
-		var tasks []orchestrator.Task
-
-		names := make(map[string]bool) // Detect duplicate task name.
-		for _, def := range v {
-			if _, ok := names[def.Name]; ok {
-				return nil, fmt.Errorf("duplicate task name %q", def.Name)
-			}
-			names[def.Name] = true
-
-			task, err := d.o.Construct(def)
-			if err != nil {
-				return nil, err
-			}
-			tasks = append(tasks, task)
-		}
-
-		return tasks, nil
-
-	case map[interface{}]*orchestrator.TaskDefinition:
-		tasks := make(map[interface{}]orchestrator.Task)
-
-		names := make(map[string]bool) // Detect duplicate task name.
-		for key, def := range v {
-			if _, ok := names[def.Name]; ok {
-				return nil, fmt.Errorf("duplicate task name %q", def.Name)
-			}
-			names[def.Name] = true
-
-			task, err := d.o.Construct(def)
-			if err != nil {
-				return nil, err
-			}
-			tasks[key] = task
-		}
-
-		return tasks, nil
 	}
-
-	return value, nil
 }

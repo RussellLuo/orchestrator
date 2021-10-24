@@ -4,5 +4,5 @@ go 1.14
 
 require (
 	github.com/PaesslerAG/jsonpath v0.1.1
-	github.com/mitchellh/mapstructure v1.4.1
+	github.com/RussellLuo/structool v0.0.0-20211024113711-6eda5ab65abf
 )
