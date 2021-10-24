@@ -9,10 +9,6 @@ import (
 	"github.com/RussellLuo/structool"
 )
 
-var (
-	reVar = regexp.MustCompile(`\${([^}]+)}`)
-)
-
 type Decoder struct {
 	data  map[string]interface{}
 	codec *structool.Codec
@@ -52,6 +48,8 @@ func (d *Decoder) Decode(in interface{}, out interface{}) error {
 }
 
 func (d *Decoder) renderJSONPath(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+	reVar := regexp.MustCompile(`\${([^}]+)}`)
+
 	return func(from, to reflect.Value) (interface{}, error) {
 		if from.Kind() != reflect.String {
 			return next(from, to)
@@ -110,11 +108,5 @@ func (d *Decoder) renderJSONPath(next structool.DecodeHookFunc) structool.Decode
 func (d *Decoder) evaluate(s string) (interface{}, error) {
 	// Convert s to a valid JSON path.
 	path := "$." + s
-
-	result, err := jsonpath.Get(path, d.data)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return jsonpath.Get(path, d.data)
 }
