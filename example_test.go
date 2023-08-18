@@ -36,10 +36,11 @@ func Example() {
 }
 
 func Example_construct() {
-	o := orchestrator.New()
-	builtin.RegisterIn(o)
+	r := orchestrator.Registry{}
+	builtin.MustRegisterSerial(r)
+	builtin.MustRegisterHTTP(r)
 
-	task, err := o.Construct(&orchestrator.TaskDefinition{
+	task, err := r.Construct(orchestrator.NewConstructDecoder(), &orchestrator.TaskDefinition{
 		Name:    "get_todo_user",
 		Type:    builtin.TypeSerial,
 		Timeout: 3 * time.Second,

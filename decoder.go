@@ -110,3 +110,79 @@ func (d *Decoder) evaluate(s string) (interface{}, error) {
 	path := "$." + s
 	return jsonpath.Get(path, d.data)
 }
+
+func NewConstructDecoder() *structool.Codec {
+	codec := structool.New().TagName("orchestrator")
+	codec.DecodeHook(
+		DecodeDefinitionToTask(codec),
+	)
+	return codec
+}
+
+func DecodeDefinitionToTask(codec *structool.Codec) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+	return func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+		return func(from, to reflect.Value) (interface{}, error) {
+
+			switch v := from.Interface().(type) {
+			case *TaskDefinition:
+				task, err := Construct(codec, v)
+				if err != nil {
+					return nil, err
+				}
+				return task, nil
+
+			case []*TaskDefinition:
+				var tasks []Task
+
+				names := make(map[string]bool) // Detect duplicate task name.
+				for _, def := range v {
+					if _, ok := names[def.Name]; ok {
+						return nil, fmt.Errorf("duplicate task name %q", def.Name)
+					}
+					names[def.Name] = true
+
+					task, err := Construct(codec, def)
+					if err != nil {
+						return nil, err
+					}
+					tasks = append(tasks, task)
+				}
+
+				return tasks, nil
+
+			case map[interface{}]*TaskDefinition:
+				tasks := make(map[interface{}]Task)
+
+				names := make(map[string]bool) // Detect duplicate task name.
+				for key, def := range v {
+					if _, ok := names[def.Name]; ok {
+						return nil, fmt.Errorf("duplicate task name %q", def.Name)
+					}
+					names[def.Name] = true
+
+					task, err := Construct(codec, def)
+					if err != nil {
+						return nil, err
+					}
+					tasks[key] = task
+				}
+
+				return tasks, nil
+			}
+
+			/*reVar := regexp.MustCompile(`\${([^}]+)}`)
+			if from.Kind() == reflect.String {
+				template := from.Interface().(string)
+				matches := reVar.FindStringSubmatch(template)
+				if len(matches) == 2 && matches[0] == template {
+					// The template contains only one variable and the variable is the whole string.
+
+					// Return the zero value of the destination field.
+					return to.Interface(), nil
+				}
+			}*/
+
+			return next(from, to)
+		}
+	}
+}

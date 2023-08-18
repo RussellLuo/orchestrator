@@ -5,11 +5,29 @@ import (
 	"fmt"
 
 	"github.com/RussellLuo/orchestrator"
+	"github.com/RussellLuo/structool"
 )
 
 const (
 	TypeFunc = "func"
 )
+
+func init() {
+	MustRegisterFunc(orchestrator.GlobalRegistry)
+}
+
+func MustRegisterFunc(r orchestrator.Registry) {
+	r.MustRegister(&orchestrator.TaskFactory{
+		Type: TypeFunc,
+		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
+			p := &Func{def: def}
+			if err := decoder.Decode(def.InputTemplate, &p.Input); err != nil {
+				return nil, err
+			}
+			return p, nil
+		},
+	})
+}
 
 // Func is a leaf task that is used to execute the input function with the given arguments.
 type Func struct {

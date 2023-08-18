@@ -10,11 +10,35 @@ import (
 	"time"
 
 	"github.com/RussellLuo/orchestrator"
+	"github.com/RussellLuo/structool"
 )
 
 const (
 	TypeHTTP = "http"
 )
+
+func init() {
+	MustRegisterHTTP(orchestrator.GlobalRegistry)
+}
+
+func MustRegisterHTTP(r orchestrator.Registry) {
+	r.MustRegister(&orchestrator.TaskFactory{
+		Type: TypeHTTP,
+		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
+			h := &HTTP{
+				def:    def,
+				client: &http.Client{Timeout: def.Timeout},
+			}
+			if err := decoder.Decode(def.InputTemplate, &h.Input); err != nil {
+				return nil, err
+			}
+
+			h.Encoding(h.Input.Encoding)
+
+			return h, nil
+		},
+	})
+}
 
 type Codec interface {
 	Decode(in io.Reader, out interface{}) error

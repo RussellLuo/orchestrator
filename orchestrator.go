@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/RussellLuo/structool"
 )
 
 type InputTemplate map[string]interface{}
@@ -32,36 +34,43 @@ type Task interface {
 	Execute(context.Context, *Decoder) (Output, error)
 }
 
-type Constructor func(*TaskDefinition) (Task, error)
-
-type Orchestrator struct {
-	constructors map[string]Constructor
+type TaskFactory struct {
+	Type        string
+	Constructor func(*structool.Codec, *TaskDefinition) (Task, error)
 }
 
-func New() *Orchestrator {
-	return &Orchestrator{constructors: make(map[string]Constructor)}
-}
+type Registry map[string]*TaskFactory
 
-func (o *Orchestrator) Register(typ string, constructor Constructor) error {
-	if _, ok := o.constructors[typ]; ok {
-		return fmt.Errorf("constructor for task type %q is already registered", typ)
+func (r Registry) Register(factory *TaskFactory) error {
+	if _, ok := r[factory.Type]; ok {
+		return fmt.Errorf("factory for task type %q is already registered", factory.Type)
 	}
 
-	o.constructors[typ] = constructor
+	r[factory.Type] = factory
 	return nil
 }
 
 // MustRegister is like Register but panics if there is an error.
-func (o *Orchestrator) MustRegister(typ string, constructor Constructor) {
-	if err := o.Register(typ, constructor); err != nil {
+func (r Registry) MustRegister(factory *TaskFactory) {
+	if err := r.Register(factory); err != nil {
 		panic(err)
 	}
 }
 
-func (o *Orchestrator) Construct(def *TaskDefinition) (Task, error) {
-	constructor, ok := o.constructors[def.Type]
+func (r Registry) Construct(decoder *structool.Codec, def *TaskDefinition) (Task, error) {
+	factory, ok := r[def.Type]
 	if !ok {
-		return nil, fmt.Errorf("constructor for task type %q is not found", def.Type)
+		return nil, fmt.Errorf("factory for task type %q is not found", def.Type)
 	}
-	return constructor(def)
+	return factory.Constructor(decoder, def)
 }
+
+func MustRegister(factory *TaskFactory) {
+	GlobalRegistry.MustRegister(factory)
+}
+
+func Construct(decoder *structool.Codec, def *TaskDefinition) (Task, error) {
+	return GlobalRegistry.Construct(decoder, def)
+}
+
+var GlobalRegistry = Registry{}

@@ -1,4 +1,4 @@
-package builtin_test
+package orchestrator_test
 
 import (
 	"context"
@@ -11,11 +11,16 @@ import (
 )
 
 var (
-	testOrchestrator = o.New()
+	testRegistry = o.Registry{}
 )
 
 func TestMain(m *testing.M) {
-	builtin.RegisterIn(testOrchestrator)
+	builtin.MustRegisterDecision(testRegistry)
+	builtin.MustRegisterFunc(testRegistry)
+	builtin.MustRegisterHTTP(testRegistry)
+	builtin.MustRegisterParallel(testRegistry)
+	builtin.MustRegisterSerial(testRegistry)
+	builtin.MustRegisterTerminate(testRegistry)
 	os.Exit(m.Run())
 }
 
@@ -135,7 +140,7 @@ func TestConstruct(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, err := testOrchestrator.Construct(tt.inTaskDef)
+			task, err := testRegistry.Construct(o.NewConstructDecoder(), tt.inTaskDef)
 			if err != nil {
 				t.Fatalf("Err: %v", err)
 			}

@@ -6,13 +6,31 @@ import (
 	"time"
 
 	"github.com/RussellLuo/orchestrator"
+	"github.com/RussellLuo/structool"
 )
 
 const (
 	TypeDecision = "decision"
 )
 
-// Decision is a composite task that is is similar to the `switch` statement in Go.
+func init() {
+	MustRegisterDecision(orchestrator.GlobalRegistry)
+}
+
+func MustRegisterDecision(r orchestrator.Registry) {
+	r.MustRegister(&orchestrator.TaskFactory{
+		Type: TypeDecision,
+		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
+			p := &Decision{def: def}
+			if err := decoder.Decode(def.InputTemplate, &p.Input); err != nil {
+				return nil, err
+			}
+			return p, nil
+		},
+	})
+}
+
+// Decision is a composite task that is similar to the `switch` statement in Go.
 type Decision struct {
 	def *orchestrator.TaskDefinition
 

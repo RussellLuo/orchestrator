@@ -5,11 +5,29 @@ import (
 	"fmt"
 
 	"github.com/RussellLuo/orchestrator"
+	"github.com/RussellLuo/structool"
 )
 
 const (
 	TypeTerminate = "terminate"
 )
+
+func init() {
+	MustRegisterTerminate(orchestrator.GlobalRegistry)
+}
+
+func MustRegisterTerminate(r orchestrator.Registry) {
+	r.MustRegister(&orchestrator.TaskFactory{
+		Type: TypeTerminate,
+		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
+			p := &Terminate{def: def}
+			if err := decoder.Decode(def.InputTemplate, &p.Input); err != nil {
+				return nil, err
+			}
+			return p, nil
+		},
+	})
+}
 
 // Terminate is a leaf task that can terminate a series of tasks with a given output.
 type Terminate struct {

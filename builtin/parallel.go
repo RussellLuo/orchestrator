@@ -7,11 +7,29 @@ import (
 	"time"
 
 	"github.com/RussellLuo/orchestrator"
+	"github.com/RussellLuo/structool"
 )
 
 const (
 	TypeParallel = "parallel"
 )
+
+func init() {
+	MustRegisterParallel(orchestrator.GlobalRegistry)
+}
+
+func MustRegisterParallel(r orchestrator.Registry) {
+	r.MustRegister(&orchestrator.TaskFactory{
+		Type: TypeParallel,
+		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
+			p := &Parallel{def: def}
+			if err := decoder.Decode(def.InputTemplate, &p.Input); err != nil {
+				return nil, err
+			}
+			return p, nil
+		},
+	})
+}
 
 // Parallel is a composite task that is used to execute its subtasks in parallel.
 type Parallel struct {
