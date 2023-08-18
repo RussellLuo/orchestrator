@@ -169,13 +169,13 @@ func (h *HTTP) Definition() *orchestrator.TaskDefinition {
 	return h.def
 }
 
-func (h *HTTP) Execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
+func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
 	var value struct {
 		URI    string                 `orchestrator:"uri"`
 		Header map[string][]string    `orchestrator:"header"`
 		Body   map[string]interface{} `orchestrator:"body"`
 	}
-	if err := decoder.Decode(h.Input, &value); err != nil {
+	if err := input.Decoder.Decode(h.Input, &value); err != nil {
 		return nil, err
 	}
 

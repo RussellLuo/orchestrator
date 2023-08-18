@@ -20,13 +20,13 @@ func TestParallel_Execute(t *testing.T) {
 		{
 			name: "ok",
 			inTask: builtin.NewParallel("count").Timeout(time.Second).Tasks(
-				builtin.NewFunc("one").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("one").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "number one"}, nil
 				}),
-				builtin.NewFunc("two").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("two").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "number two"}, nil
 				}),
-				builtin.NewFunc("three").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("three").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "number three"}, nil
 				}),
 			),
@@ -45,13 +45,13 @@ func TestParallel_Execute(t *testing.T) {
 		{
 			name: "error",
 			inTask: builtin.NewParallel("count").Timeout(time.Second).Tasks(
-				builtin.NewFunc("one").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("one").Func(func(context.Context, o.Input) (o.Output, error) {
 					return nil, fmt.Errorf("the first error")
 				}),
-				builtin.NewFunc("two").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("two").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "number two"}, nil
 				}),
-				builtin.NewFunc("three").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("three").Func(func(context.Context, o.Input) (o.Output, error) {
 					return nil, fmt.Errorf("the third error")
 				}),
 			),
@@ -60,13 +60,13 @@ func TestParallel_Execute(t *testing.T) {
 		{
 			name: "timeout",
 			inTask: builtin.NewParallel("count").Timeout(50*time.Millisecond).Tasks(
-				builtin.NewFunc("one").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("one").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "number one"}, nil
 				}),
-				builtin.NewFunc("two").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("two").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "number two"}, nil
 				}),
-				builtin.NewFunc("three").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("three").Func(func(context.Context, o.Input) (o.Output, error) {
 					time.Sleep(100 * time.Millisecond) // This leads to timeout
 
 					return o.Output{"result": "number three"}, nil
@@ -78,8 +78,8 @@ func TestParallel_Execute(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			decoder := o.NewDecoder()
-			output, err := tt.inTask.Execute(context.Background(), decoder)
+			input := o.NewInput(nil)
+			output, err := tt.inTask.Execute(context.Background(), input)
 
 			gotErr := ""
 			if err != nil {

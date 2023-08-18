@@ -34,7 +34,7 @@ type Func struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		Func func(context.Context, *orchestrator.Decoder) (orchestrator.Output, error) `orchestrator:"func"`
+		Func func(context.Context, orchestrator.Input) (orchestrator.Output, error) `orchestrator:"func"`
 	}
 }
 
@@ -47,7 +47,7 @@ func NewFunc(name string) *Func {
 	}
 }
 
-func (f *Func) Func(ef func(context.Context, *orchestrator.Decoder) (orchestrator.Output, error)) *Func {
+func (f *Func) Func(ef func(context.Context, orchestrator.Input) (orchestrator.Output, error)) *Func {
 	f.Input.Func = ef
 	return f
 }
@@ -60,6 +60,6 @@ func (f *Func) Definition() *orchestrator.TaskDefinition {
 	return f.def
 }
 
-func (f *Func) Execute(ctx context.Context, decoder *orchestrator.Decoder) (output orchestrator.Output, err error) {
-	return f.Input.Func(ctx, decoder)
+func (f *Func) Execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {
+	return f.Input.Func(ctx, input)
 }

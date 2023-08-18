@@ -99,19 +99,19 @@ func (d *Decision) Definition() *orchestrator.TaskDefinition {
 	return d.def
 }
 
-func (d *Decision) Execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
+func (d *Decision) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
 	var switchValue interface{}
-	if err := decoder.Decode(d.Input.Switch, &switchValue); err != nil {
+	if err := input.Decoder.Decode(d.Input.Switch, &switchValue); err != nil {
 		return nil, err
 	}
 
 	task, ok := d.Input.Cases[switchValue]
 	if !ok {
 		if d.Input.Default != nil {
-			return d.Input.Default.Execute(ctx, decoder)
+			return d.Input.Default.Execute(ctx, input)
 		}
 		return nil, nil
 	}
 
-	return task.Execute(ctx, decoder)
+	return task.Execute(ctx, input)
 }

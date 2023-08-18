@@ -42,14 +42,14 @@ func TestConstruct(t *testing.T) {
 							Name: "say_name",
 							Type: builtin.TypeFunc,
 							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) { return nil, nil },
+								"func": func(context.Context, o.Input) (o.Output, error) { return nil, nil },
 							},
 						},
 						{
 							Name: "say_hello",
 							Type: builtin.TypeFunc,
 							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) { return nil, nil },
+								"func": func(context.Context, o.Input) (o.Output, error) { return nil, nil },
 							},
 						},
 					},
@@ -69,14 +69,14 @@ func TestConstruct(t *testing.T) {
 							Name: "one",
 							Type: builtin.TypeFunc,
 							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) { return nil, nil },
+								"func": func(context.Context, o.Input) (o.Output, error) { return nil, nil },
 							},
 						},
 						{
 							Name: "two",
 							Type: builtin.TypeFunc,
 							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) { return nil, nil },
+								"func": func(context.Context, o.Input) (o.Output, error) { return nil, nil },
 							},
 						},
 					},
@@ -109,7 +109,7 @@ func TestConstruct(t *testing.T) {
 							Name: "case_0",
 							Type: builtin.TypeFunc,
 							InputTemplate: o.InputTemplate{
-								"func": func(context.Context, *o.Decoder) (o.Output, error) { return nil, nil },
+								"func": func(context.Context, o.Input) (o.Output, error) { return nil, nil },
 							},
 						},
 					},
@@ -117,7 +117,7 @@ func TestConstruct(t *testing.T) {
 						Name: "default",
 						Type: builtin.TypeFunc,
 						InputTemplate: o.InputTemplate{
-							"func": func(context.Context, *o.Decoder) (o.Output, error) { return nil, nil },
+							"func": func(context.Context, o.Input) (o.Output, error) { return nil, nil },
 						},
 					},
 				},

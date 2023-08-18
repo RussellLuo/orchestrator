@@ -10,6 +10,16 @@ import (
 
 type InputTemplate map[string]interface{}
 
+type Input struct {
+	Decoder *Decoder
+}
+
+func NewInput(input map[string]interface{}) Input {
+	decoder := NewDecoder()
+	decoder.AddInput("context", input)
+	return Input{Decoder: decoder}
+}
+
 type Output map[string]interface{}
 
 func (o Output) SetTerminated() {
@@ -31,7 +41,7 @@ type TaskDefinition struct {
 type Task interface {
 	Definition() *TaskDefinition
 	InputString() string
-	Execute(context.Context, *Decoder) (Output, error)
+	Execute(context.Context, Input) (Output, error)
 }
 
 type TaskFactory struct {

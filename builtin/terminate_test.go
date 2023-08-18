@@ -20,18 +20,18 @@ func TestTerminate(t *testing.T) {
 		{
 			name: "terminate",
 			inTask: builtin.NewSerial("greeting").Timeout(time.Second).Tasks(
-				builtin.NewFunc("say_name").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				builtin.NewFunc("say_name").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"name": "world"}, nil
 				}),
 				builtin.NewTerminate("say_goodbye").Output(o.Output{
 					"goodbye": "${say_name.output.name}",
 				}),
-				builtin.NewFunc("say_hello").Func(func(ctx context.Context, decoder *o.Decoder) (o.Output, error) {
-					input := map[string]interface{}{
+				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
+					in := map[string]interface{}{
 						"hello": "${say_name.output.name}",
 					}
 					output := make(map[string]interface{})
-					if err := decoder.Decode(input, &output); err != nil {
+					if err := input.Decoder.Decode(in, &output); err != nil {
 						return nil, err
 					}
 					return output, nil
@@ -46,8 +46,8 @@ func TestTerminate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			decoder := o.NewDecoder()
-			output, err := tt.inTask.Execute(context.Background(), decoder)
+			input := o.NewInput(nil)
+			output, err := tt.inTask.Execute(context.Background(), input)
 
 			gotErr := ""
 			if err != nil {

@@ -15,9 +15,8 @@ func TestHTTP_Execute(t *testing.T) {
 		"https://jsonplaceholder.typicode.com/todos/${context.input.todoId}",
 	)
 
-	decoder := orchestrator.NewDecoder()
-	decoder.AddInput("context", map[string]interface{}{"todoId": 1})
-	output, err := task.Execute(context.Background(), decoder)
+	input := orchestrator.NewInput(map[string]interface{}{"todoId": 1})
+	output, err := task.Execute(context.Background(), input)
 	if err != nil {
 		t.Fatalf("Err: %v", err)
 	}

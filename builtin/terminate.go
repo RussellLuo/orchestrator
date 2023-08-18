@@ -60,9 +60,9 @@ func (t *Terminate) Definition() *orchestrator.TaskDefinition {
 	return t.def
 }
 
-func (t *Terminate) Execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
+func (t *Terminate) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
 	output := orchestrator.Output{}
-	if err := decoder.Decode(t.Input.Output, &output); err != nil {
+	if err := input.Decoder.Decode(t.Input.Output, &output); err != nil {
 		return nil, err
 	}
 

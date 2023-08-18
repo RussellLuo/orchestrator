@@ -77,16 +77,16 @@ func (p *Parallel) Definition() *orchestrator.TaskDefinition {
 	return p.def
 }
 
-func (p *Parallel) Execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
-	return executeWithTimeout(ctx, decoder, p.def.Timeout, p.execute)
+func (p *Parallel) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
+	return executeWithTimeout(ctx, input, p.def.Timeout, p.execute)
 }
 
-func (p *Parallel) execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
+func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
 	// Scatter
 	resultChan := make(chan Result, len(p.Input.Tasks))
 	for _, t := range p.Input.Tasks {
 		go func(t orchestrator.Task) {
-			output, err := t.Execute(ctx, decoder)
+			output, err := t.Execute(ctx, input)
 			resultChan <- Result{
 				Name:   t.Definition().Name,
 				Output: output,

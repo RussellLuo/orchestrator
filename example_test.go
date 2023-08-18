@@ -19,9 +19,8 @@ func Example() {
 		),
 	)
 
-	decoder := orchestrator.NewDecoder()
-	decoder.AddInput("context", map[string]interface{}{"todoId": 1})
-	output, err := task.Execute(context.Background(), decoder)
+	input := orchestrator.NewInput(map[string]interface{}{"todoId": 1})
+	output, err := task.Execute(context.Background(), input)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -72,9 +71,8 @@ func Example_construct() {
 		return
 	}
 
-	decoder := orchestrator.NewDecoder()
-	decoder.AddInput("context", map[string]interface{}{"todoId": 1})
-	output, err := task.Execute(context.Background(), decoder)
+	input := orchestrator.NewInput(map[string]interface{}{"todoId": 1})
+	output, err := task.Execute(context.Background(), input)
 	if err != nil {
 		fmt.Println(err)
 		return

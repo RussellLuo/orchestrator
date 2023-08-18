@@ -20,10 +20,10 @@ func TestDecision_Execute(t *testing.T) {
 			name: "case hit",
 			inTask: builtin.NewDecision("test").
 				Switch(0).
-				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "case_0"}, nil
 				})).
-				Default(builtin.NewFunc("default").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				Default(builtin.NewFunc("default").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "default"}, nil
 				})),
 			wantOutput: o.Output{"result": "case_0"},
@@ -32,10 +32,10 @@ func TestDecision_Execute(t *testing.T) {
 			name: "default hit",
 			inTask: builtin.NewDecision("test").
 				Switch(1).
-				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "case_0"}, nil
 				})).
-				Default(builtin.NewFunc("default").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				Default(builtin.NewFunc("default").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "default"}, nil
 				})),
 			wantOutput: o.Output{"result": "default"},
@@ -44,10 +44,10 @@ func TestDecision_Execute(t *testing.T) {
 			name: "switch template",
 			inTask: builtin.NewDecision("test").
 				Switch("${context.input.value}").
-				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "case_0"}, nil
 				})).
-				Default(builtin.NewFunc("default").Func(func(context.Context, *o.Decoder) (o.Output, error) {
+				Default(builtin.NewFunc("default").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "default"}, nil
 				})),
 			wantOutput: o.Output{"result": "case_0"},
@@ -56,9 +56,8 @@ func TestDecision_Execute(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			decoder := o.NewDecoder()
-			decoder.AddInput("context", map[string]interface{}{"value": 0})
-			output, err := tt.inTask.Execute(context.Background(), decoder)
+			input := o.NewInput(map[string]interface{}{"value": 0})
+			output, err := tt.inTask.Execute(context.Background(), input)
 
 			gotErr := ""
 			if err != nil {

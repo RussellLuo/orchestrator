@@ -37,10 +37,10 @@ type Result struct {
 	Err    error
 }
 
-func executeWithTimeout(ctx context.Context, decoder *orchestrator.Decoder, timeout time.Duration, f func(context.Context, *orchestrator.Decoder) (orchestrator.Output, error)) (orchestrator.Output, error) {
+func executeWithTimeout(ctx context.Context, input orchestrator.Input, timeout time.Duration, f func(context.Context, orchestrator.Input) (orchestrator.Output, error)) (orchestrator.Output, error) {
 	if timeout <= 0 {
 		// Execute f directly.
-		return f(ctx, decoder)
+		return f(ctx, input)
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -48,7 +48,7 @@ func executeWithTimeout(ctx context.Context, decoder *orchestrator.Decoder, time
 
 	resultChan := make(chan Result, 1)
 	go func() {
-		output, err := f(ctx, decoder)
+		output, err := f(ctx, input)
 		resultChan <- Result{Output: output, Err: err}
 	}()
 
@@ -106,13 +106,13 @@ func (s *Serial) Definition() *orchestrator.TaskDefinition {
 	return s.def
 }
 
-func (s *Serial) Execute(ctx context.Context, decoder *orchestrator.Decoder) (orchestrator.Output, error) {
-	return executeWithTimeout(ctx, decoder, s.def.Timeout, s.execute)
+func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
+	return executeWithTimeout(ctx, input, s.def.Timeout, s.execute)
 }
 
-func (s *Serial) execute(ctx context.Context, decoder *orchestrator.Decoder) (output orchestrator.Output, err error) {
+func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {
 	for _, t := range s.Input.Tasks {
-		output, err = t.Execute(ctx, decoder)
+		output, err = t.Execute(ctx, input)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +121,7 @@ func (s *Serial) execute(ctx context.Context, decoder *orchestrator.Decoder) (ou
 			return output, nil
 		}
 
-		decoder.AddOutput(t.Definition().Name, output)
+		input.Decoder.AddOutput(t.Definition().Name, output)
 	}
 	return output, nil
 }
