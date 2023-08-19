@@ -39,6 +39,10 @@ type Decision struct {
 		Cases   map[interface{}]orchestrator.Task `orchestrator:"cases"`
 		Default orchestrator.Task                 `orchestrator:"default"`
 	}
+
+	Expression struct {
+		Switch interface{} `orchestrator:"switch"`
+	}
 }
 
 func NewDecision(name string) *Decision {
@@ -100,12 +104,11 @@ func (d *Decision) Definition() *orchestrator.TaskDefinition {
 }
 
 func (d *Decision) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	var switchValue interface{}
-	if err := input.Decoder.Decode(d.Input.Switch, &switchValue); err != nil {
+	if err := input.Decoder.Decode(d.Input, &d.Expression); err != nil {
 		return nil, err
 	}
 
-	task, ok := d.Input.Cases[switchValue]
+	task, ok := d.Input.Cases[d.Expression.Switch]
 	if !ok {
 		if d.Input.Default != nil {
 			return d.Input.Default.Execute(ctx, input)

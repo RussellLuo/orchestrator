@@ -82,6 +82,12 @@ type HTTP struct {
 		Header   map[string][]string    `orchestrator:"header"`
 		Body     map[string]interface{} `orchestrator:"body"`
 	}
+
+	Expression struct {
+		URI    string                 `orchestrator:"uri"`
+		Header map[string][]string    `orchestrator:"header"`
+		Body   map[string]interface{} `orchestrator:"body"`
+	}
 }
 
 func NewHTTP(name string) *HTTP {
@@ -170,29 +176,24 @@ func (h *HTTP) Definition() *orchestrator.TaskDefinition {
 }
 
 func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	var value struct {
-		URI    string                 `orchestrator:"uri"`
-		Header map[string][]string    `orchestrator:"header"`
-		Body   map[string]interface{} `orchestrator:"body"`
-	}
-	if err := input.Decoder.Decode(h.Input, &value); err != nil {
+	if err := input.Decoder.Decode(h.Input, &h.Expression); err != nil {
 		return nil, err
 	}
 
 	var body io.Reader
-	if len(value.Body) > 0 {
-		out, err := h.codec.Encode(value.Body)
+	if len(h.Expression.Body) > 0 {
+		out, err := h.codec.Encode(h.Expression.Body)
 		if err != nil {
 			return nil, err
 		}
 		body = out
 	}
 
-	req, err := http.NewRequest(h.Input.Method, value.URI, body)
+	req, err := http.NewRequest(h.Input.Method, h.Expression.URI, body)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range value.Header {
+	for k, v := range h.Expression.Header {
 		for _, vv := range v {
 			req.Header.Add(k, vv)
 		}

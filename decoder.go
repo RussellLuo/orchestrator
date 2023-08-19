@@ -111,21 +111,21 @@ func (d *Decoder) evaluate(s string) (interface{}, error) {
 	return jsonpath.Get(path, d.data)
 }
 
-func NewConstructDecoder() *structool.Codec {
+func NewConstructDecoder(r Registry) *structool.Codec {
 	codec := structool.New().TagName("orchestrator")
 	codec.DecodeHook(
-		DecodeDefinitionToTask(codec),
+		DecodeDefinitionToTask(r, codec),
 	)
 	return codec
 }
 
-func DecodeDefinitionToTask(codec *structool.Codec) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+func DecodeDefinitionToTask(r Registry, codec *structool.Codec) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
 	return func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
 		return func(from, to reflect.Value) (interface{}, error) {
 
 			switch v := from.Interface().(type) {
 			case *TaskDefinition:
-				task, err := Construct(codec, v)
+				task, err := r.Construct(codec, v)
 				if err != nil {
 					return nil, err
 				}
@@ -141,7 +141,7 @@ func DecodeDefinitionToTask(codec *structool.Codec) func(next structool.DecodeHo
 					}
 					names[def.Name] = true
 
-					task, err := Construct(codec, def)
+					task, err := r.Construct(codec, def)
 					if err != nil {
 						return nil, err
 					}
@@ -160,7 +160,7 @@ func DecodeDefinitionToTask(codec *structool.Codec) func(next structool.DecodeHo
 					}
 					names[def.Name] = true
 
-					task, err := Construct(codec, def)
+					task, err := r.Construct(codec, def)
 					if err != nil {
 						return nil, err
 					}

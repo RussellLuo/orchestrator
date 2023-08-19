@@ -39,7 +39,7 @@ func Example_construct() {
 	builtin.MustRegisterSerial(r)
 	builtin.MustRegisterHTTP(r)
 
-	task, err := r.Construct(orchestrator.NewConstructDecoder(), &orchestrator.TaskDefinition{
+	task, err := r.Construct(orchestrator.NewConstructDecoder(r), &orchestrator.TaskDefinition{
 		Name:    "get_todo_user",
 		Type:    builtin.TypeSerial,
 		Timeout: 3 * time.Second,

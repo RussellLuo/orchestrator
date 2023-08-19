@@ -140,7 +140,7 @@ func TestConstruct(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, err := testRegistry.Construct(o.NewConstructDecoder(), tt.inTaskDef)
+			task, err := testRegistry.Construct(o.NewConstructDecoder(testRegistry), tt.inTaskDef)
 			if err != nil {
 				t.Fatalf("Err: %v", err)
 			}
