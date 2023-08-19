@@ -89,7 +89,7 @@ func (d *Decoder) renderJSONPath(next structool.DecodeHookFunc) structool.Decode
 			fallthrough
 
 		default:
-			// template contains more than one variables, replace all the matched
+			// template contains more than one variable, replace all the matched
 			// substrings with the result value.
 			var result interface{}
 			var err error
@@ -114,75 +114,33 @@ func (d *Decoder) evaluate(s string) (interface{}, error) {
 func NewConstructDecoder(r Registry) *structool.Codec {
 	codec := structool.New().TagName("orchestrator")
 	codec.DecodeHook(
-		DecodeDefinitionToTask(r, codec),
+		structool.DecodeStringToDuration,
+		decodeDefinitionToTask(r, codec),
 	)
 	return codec
 }
 
-func DecodeDefinitionToTask(r Registry, codec *structool.Codec) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+func decodeDefinitionToTask(r Registry, codec *structool.Codec) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+	c := structool.New().TagName("orchestrator").DecodeHook(
+		structool.DecodeStringToDuration,
+	)
+
 	return func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
 		return func(from, to reflect.Value) (interface{}, error) {
-
-			switch v := from.Interface().(type) {
-			case *TaskDefinition:
-				task, err := r.Construct(codec, v)
-				if err != nil {
-					return nil, err
-				}
-				return task, nil
-
-			case []*TaskDefinition:
-				var tasks []Task
-
-				names := make(map[string]bool) // Detect duplicate task name.
-				for _, def := range v {
-					if _, ok := names[def.Name]; ok {
-						return nil, fmt.Errorf("duplicate task name %q", def.Name)
-					}
-					names[def.Name] = true
-
-					task, err := r.Construct(codec, def)
-					if err != nil {
-						return nil, err
-					}
-					tasks = append(tasks, task)
-				}
-
-				return tasks, nil
-
-			case map[interface{}]*TaskDefinition:
-				tasks := make(map[interface{}]Task)
-
-				names := make(map[string]bool) // Detect duplicate task name.
-				for key, def := range v {
-					if _, ok := names[def.Name]; ok {
-						return nil, fmt.Errorf("duplicate task name %q", def.Name)
-					}
-					names[def.Name] = true
-
-					task, err := r.Construct(codec, def)
-					if err != nil {
-						return nil, err
-					}
-					tasks[key] = task
-				}
-
-				return tasks, nil
+			if to.Type().String() != "orchestrator.Task" {
+				return next(from, to)
 			}
 
-			/*reVar := regexp.MustCompile(`\${([^}]+)}`)
-			if from.Kind() == reflect.String {
-				template := from.Interface().(string)
-				matches := reVar.FindStringSubmatch(template)
-				if len(matches) == 2 && matches[0] == template {
-					// The template contains only one variable and the variable is the whole string.
+			var def *TaskDefinition
+			if err := c.Decode(from.Interface(), &def); err != nil {
+				return nil, err
+			}
 
-					// Return the zero value of the destination field.
-					return to.Interface(), nil
-				}
-			}*/
-
-			return next(from, to)
+			task, err := r.Construct(codec, def)
+			if err != nil {
+				return nil, err
+			}
+			return task, nil
 		}
 	}
 }

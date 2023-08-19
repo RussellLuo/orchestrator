@@ -32,10 +32,10 @@ func (o Output) IsTerminated() bool {
 }
 
 type TaskDefinition struct {
-	Name          string        `yaml:"name" orchestrator:"name"`
-	Type          string        `yaml:"type" orchestrator:"type"`
-	Timeout       time.Duration `yaml:"timeout" orchestrator:"timeout"`
-	InputTemplate InputTemplate `yaml:"input" orchestrator:"input"`
+	Name          string        `json:"name" yaml:"name" orchestrator:"name"`
+	Type          string        `json:"type" yaml:"type" orchestrator:"type"`
+	Timeout       time.Duration `json:"timeout" yaml:"timeout" orchestrator:"timeout"`
+	InputTemplate InputTemplate `json:"input" yaml:"input" orchestrator:"input"`
 }
 
 type Task interface {
@@ -75,12 +75,28 @@ func (r Registry) Construct(decoder *structool.Codec, def *TaskDefinition) (Task
 	return factory.Constructor(decoder, def)
 }
 
+func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]interface{}) (Task, error) {
+	codec := structool.New().TagName("orchestrator").DecodeHook(
+		structool.DecodeStringToDuration,
+	)
+	var def *TaskDefinition
+	if err := codec.Decode(m, &def); err != nil {
+		return nil, err
+	}
+
+	return Construct(decoder, def)
+}
+
 func MustRegister(factory *TaskFactory) {
 	GlobalRegistry.MustRegister(factory)
 }
 
 func Construct(decoder *structool.Codec, def *TaskDefinition) (Task, error) {
 	return GlobalRegistry.Construct(decoder, def)
+}
+
+func ConstructFromMap(decoder *structool.Codec, m map[string]interface{}) (Task, error) {
+	return GlobalRegistry.ConstructFromMap(decoder, m)
 }
 
 var GlobalRegistry = Registry{}

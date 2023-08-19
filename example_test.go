@@ -2,6 +2,7 @@ package orchestrator_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -66,6 +67,64 @@ func Example_construct() {
 			},
 		},
 	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	input := orchestrator.NewInput(map[string]interface{}{"todoId": 1})
+	output, err := task.Execute(context.Background(), input)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	body := output["body"].(map[string]interface{})
+	fmt.Println(body["name"])
+
+	// Output:
+	// Leanne Graham
+}
+
+func Example_constructFromMap() {
+	r := orchestrator.Registry{}
+	builtin.MustRegisterSerial(r)
+	builtin.MustRegisterHTTP(r)
+
+	data := []byte(`{
+  "name": "get_todo_user",
+  "type": "serial",
+  "timeout": "3s",
+  "input": {
+    "tasks": [
+      {
+        "name": "get_todo",
+        "type": "http",
+        "timeout": "2s",
+        "input": {
+          "method": "GET",
+          "uri": "https://jsonplaceholder.typicode.com/todos/${context.input.todoId}"
+        }
+      },
+      {
+        "name": "get_user",
+        "type": "http",
+        "timeout": "2s",
+        "input": {
+          "method": "GET",
+          "uri": "https://jsonplaceholder.typicode.com/users/${get_todo.output.body.userId}"
+        }
+      }
+    ]
+  }
+}`)
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	task, err := r.ConstructFromMap(orchestrator.NewConstructDecoder(r), m)
 	if err != nil {
 		fmt.Println(err)
 		return
