@@ -52,12 +52,10 @@ func (t *Terminate) Output(output orchestrator.Output) *Terminate {
 	return t
 }
 
-func (t *Terminate) InputString() string {
-	return fmt.Sprintf("%s(name:%s, output:%v)", t.def.Type, t.def.Name, t.Input.Output)
-}
+func (t *Terminate) Name() string { return t.def.Name }
 
-func (t *Terminate) Definition() *orchestrator.TaskDefinition {
-	return t.def
+func (t *Terminate) String() string {
+	return fmt.Sprintf("%s(name:%s, output:%v)", t.def.Type, t.def.Name, t.Input.Output)
 }
 
 func (t *Terminate) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {

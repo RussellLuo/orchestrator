@@ -183,8 +183,8 @@ func TestConstructDecoder(t *testing.T) {
 				t.Fatalf("Err: %v", err)
 			}
 
-			if task.InputString() != tt.wantTaskInput {
-				t.Fatalf("Task Input: Got (%#v) != Want (%#v)", task.InputString(), tt.wantTaskInput)
+			if task.String() != tt.wantTaskInput {
+				t.Fatalf("Task Input: Got (%#v) != Want (%#v)", task.String(), tt.wantTaskInput)
 			}
 		})
 	}

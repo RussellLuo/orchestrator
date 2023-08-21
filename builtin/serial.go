@@ -88,10 +88,12 @@ func (s *Serial) Tasks(tasks ...orchestrator.Task) *Serial {
 	return s
 }
 
-func (s *Serial) InputString() string {
+func (s *Serial) Name() string { return s.def.Name }
+
+func (s *Serial) String() string {
 	var inputStrings []string
 	for _, t := range s.Input.Tasks {
-		inputStrings = append(inputStrings, t.InputString())
+		inputStrings = append(inputStrings, t.String())
 	}
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, tasks:[%s])",
@@ -100,10 +102,6 @@ func (s *Serial) InputString() string {
 		s.def.Timeout,
 		strings.Join(inputStrings, ", "),
 	)
-}
-
-func (s *Serial) Definition() *orchestrator.TaskDefinition {
-	return s.def
 }
 
 func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
@@ -121,7 +119,7 @@ func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output 
 			return output, nil
 		}
 
-		input.Decoder.AddOutput(t.Definition().Name, output)
+		input.Decoder.AddOutput(t.Name(), output)
 	}
 	return output, nil
 }

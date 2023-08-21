@@ -77,15 +77,17 @@ func (d *Decision) Default(task orchestrator.Task) *Decision {
 	return d
 }
 
-func (d *Decision) InputString() string {
+func (d *Decision) Name() string { return d.def.Name }
+
+func (d *Decision) String() string {
 	casesInputStrings := make(map[interface{}]string)
 	for v, t := range d.Input.Cases {
-		casesInputStrings[v] = t.InputString()
+		casesInputStrings[v] = t.String()
 	}
 
 	var defaultInputString string
 	if d.Input.Default != nil {
-		defaultInputString = d.Input.Default.InputString()
+		defaultInputString = d.Input.Default.String()
 	}
 
 	return fmt.Sprintf(
@@ -97,10 +99,6 @@ func (d *Decision) InputString() string {
 		casesInputStrings,
 		defaultInputString,
 	)
-}
-
-func (d *Decision) Definition() *orchestrator.TaskDefinition {
-	return d.def
 }
 
 func (d *Decision) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {

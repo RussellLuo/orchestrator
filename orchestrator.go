@@ -40,8 +40,13 @@ type TaskDefinition struct {
 }
 
 type Task interface {
-	Definition() *TaskDefinition
-	InputString() string
+	// Name returns the name of the task.
+	Name() string
+
+	// String returns a string representation of the task.
+	String() string
+
+	// Execute executes the task with the given input.
 	Execute(context.Context, Input) (Output, error)
 }
 

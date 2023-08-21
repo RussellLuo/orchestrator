@@ -52,12 +52,10 @@ func (f *Func) Func(ef func(context.Context, orchestrator.Input) (orchestrator.O
 	return f
 }
 
-func (f *Func) InputString() string {
-	return fmt.Sprintf("%s(name:%s)", f.def.Type, f.def.Name)
-}
+func (f *Func) Name() string { return f.def.Name }
 
-func (f *Func) Definition() *orchestrator.TaskDefinition {
-	return f.def
+func (f *Func) String() string {
+	return fmt.Sprintf("%s(name:%s)", f.def.Type, f.def.Name)
 }
 
 func (f *Func) Execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {

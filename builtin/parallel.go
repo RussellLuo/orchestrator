@@ -59,10 +59,12 @@ func (p *Parallel) Tasks(tasks ...orchestrator.Task) *Parallel {
 	return p
 }
 
-func (p *Parallel) InputString() string {
+func (p *Parallel) Name() string { return p.def.Name }
+
+func (p *Parallel) String() string {
 	var inputStrings []string
 	for _, t := range p.Input.Tasks {
-		inputStrings = append(inputStrings, t.InputString())
+		inputStrings = append(inputStrings, t.String())
 	}
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, tasks:[%s])",
@@ -71,10 +73,6 @@ func (p *Parallel) InputString() string {
 		p.def.Timeout,
 		strings.Join(inputStrings, ", "),
 	)
-}
-
-func (p *Parallel) Definition() *orchestrator.TaskDefinition {
-	return p.def
 }
 
 func (p *Parallel) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
@@ -88,7 +86,7 @@ func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orche
 		go func(t orchestrator.Task) {
 			output, err := t.Execute(ctx, input)
 			resultChan <- Result{
-				Name:   t.Definition().Name,
+				Name:   t.Name(),
 				Output: output,
 				Err:    err,
 			}

@@ -158,7 +158,9 @@ func (h *HTTP) Body(body map[string]interface{}) *HTTP {
 	return h
 }
 
-func (h *HTTP) InputString() string {
+func (h *HTTP) Name() string { return h.def.Name }
+
+func (h *HTTP) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, request:%s %s, header:%s, body:%s)",
 		h.def.Type,
@@ -169,10 +171,6 @@ func (h *HTTP) InputString() string {
 		h.Input.Header,
 		h.Input.Body,
 	)
-}
-
-func (h *HTTP) Definition() *orchestrator.TaskDefinition {
-	return h.def
 }
 
 func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
