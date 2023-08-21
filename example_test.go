@@ -2,7 +2,6 @@ package orchestrator_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -86,7 +85,7 @@ func Example_construct() {
 	// Leanne Graham
 }
 
-func Example_constructFromMap() {
+func Example_constructFromJSON() {
 	r := orchestrator.Registry{}
 	builtin.MustRegisterSerial(r)
 	builtin.MustRegisterHTTP(r)
@@ -118,13 +117,8 @@ func Example_constructFromMap() {
     ]
   }
 }`)
-	var m map[string]interface{}
-	if err := json.Unmarshal(data, &m); err != nil {
-		fmt.Println(err)
-		return
-	}
 
-	task, err := r.ConstructFromMap(orchestrator.NewConstructDecoder(r), m)
+	task, err := r.ConstructFromJSON(orchestrator.NewConstructDecoder(r), data)
 	if err != nil {
 		fmt.Println(err)
 		return

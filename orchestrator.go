@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -75,7 +76,12 @@ func (r Registry) Construct(decoder *structool.Codec, def *TaskDefinition) (Task
 	return factory.Constructor(decoder, def)
 }
 
-func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]interface{}) (Task, error) {
+func (r Registry) ConstructFromJSON(decoder *structool.Codec, data []byte) (Task, error) {
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+
 	codec := structool.New().TagName("orchestrator").DecodeHook(
 		structool.DecodeStringToDuration,
 	)
@@ -84,7 +90,7 @@ func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]interf
 		return nil, err
 	}
 
-	return Construct(decoder, def)
+	return r.Construct(decoder, def)
 }
 
 func MustRegister(factory *TaskFactory) {
@@ -95,8 +101,8 @@ func Construct(decoder *structool.Codec, def *TaskDefinition) (Task, error) {
 	return GlobalRegistry.Construct(decoder, def)
 }
 
-func ConstructFromMap(decoder *structool.Codec, m map[string]interface{}) (Task, error) {
-	return GlobalRegistry.ConstructFromMap(decoder, m)
+func ConstructFromJSON(decoder *structool.Codec, data []byte) (Task, error) {
+	return GlobalRegistry.ConstructFromJSON(decoder, data)
 }
 
 var GlobalRegistry = Registry{}
