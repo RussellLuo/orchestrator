@@ -81,12 +81,7 @@ func (r Registry) Construct(decoder *structool.Codec, def *TaskDefinition) (Task
 	return factory.Constructor(decoder, def)
 }
 
-func (r Registry) ConstructFromJSON(decoder *structool.Codec, data []byte) (Task, error) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(data, &m); err != nil {
-		return nil, err
-	}
-
+func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]interface{}) (Task, error) {
 	codec := structool.New().TagName("orchestrator").DecodeHook(
 		structool.DecodeStringToDuration,
 	)
@@ -98,12 +93,25 @@ func (r Registry) ConstructFromJSON(decoder *structool.Codec, data []byte) (Task
 	return r.Construct(decoder, def)
 }
 
+func (r Registry) ConstructFromJSON(decoder *structool.Codec, data []byte) (Task, error) {
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+
+	return r.ConstructFromMap(decoder, m)
+}
+
 func MustRegister(factory *TaskFactory) {
 	GlobalRegistry.MustRegister(factory)
 }
 
 func Construct(decoder *structool.Codec, def *TaskDefinition) (Task, error) {
 	return GlobalRegistry.Construct(decoder, def)
+}
+
+func ConstructFromMap(decoder *structool.Codec, m map[string]interface{}) (Task, error) {
+	return GlobalRegistry.ConstructFromMap(decoder, m)
 }
 
 func ConstructFromJSON(decoder *structool.Codec, data []byte) (Task, error) {
