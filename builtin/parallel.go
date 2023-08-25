@@ -94,7 +94,7 @@ func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orche
 	}
 
 	// Gather
-	output := make(map[string]interface{})
+	output := make(map[string]any)
 	var errors []string
 	for i := 0; i < cap(resultChan); i++ {
 		result := <-resultChan

@@ -21,14 +21,14 @@ func TestDecoder_Decode(t *testing.T) {
 	}
 
 	decoder := orchestrator.NewDecoder()
-	decoder.AddInput("task1", map[string]interface{}{
+	decoder.AddInput("task1", map[string]any{
 		"value": "1",
 	})
-	decoder.AddOutput("task2", map[string]interface{}{
+	decoder.AddOutput("task2", map[string]any{
 		"value": 2,
 	})
 
-	in := map[string]interface{}{
+	in := map[string]any{
 		"a": "${task1.input.value}",
 		"b": "${task2.output.value}",
 		"c": "/posts/${task2.output.value}",

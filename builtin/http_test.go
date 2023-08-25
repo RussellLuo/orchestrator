@@ -15,7 +15,7 @@ func TestHTTP_Execute(t *testing.T) {
 		"https://jsonplaceholder.typicode.com/todos/${context.input.todoId}",
 	)
 
-	input := orchestrator.NewInput(map[string]interface{}{"todoId": 1})
+	input := orchestrator.NewInput(map[string]any{"todoId": 1})
 	output, err := task.Execute(context.Background(), input)
 	if err != nil {
 		t.Fatalf("Err: %v", err)
@@ -23,7 +23,7 @@ func TestHTTP_Execute(t *testing.T) {
 
 	wantOutput := orchestrator.Output{
 		"status": 200,
-		"body": map[string]interface{}{
+		"body": map[string]any{
 			"userId":    1,
 			"id":        1,
 			"title":     "delectus aut autem",

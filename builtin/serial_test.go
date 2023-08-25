@@ -24,10 +24,10 @@ func TestSerial_Execute(t *testing.T) {
 					return o.Output{"name": "world"}, nil
 				}),
 				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
-					in := map[string]interface{}{
+					in := map[string]any{
 						"hello": "${say_name.output.name}",
 					}
-					output := make(map[string]interface{})
+					output := make(map[string]any)
 					if err := input.Decoder.Decode(in, &output); err != nil {
 						return nil, err
 					}
@@ -43,10 +43,10 @@ func TestSerial_Execute(t *testing.T) {
 					return nil, fmt.Errorf("error in say_name")
 				}),
 				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
-					in := map[string]interface{}{
+					in := map[string]any{
 						"hello": "${say_name.output.name}",
 					}
-					output := make(map[string]interface{})
+					output := make(map[string]any)
 					if err := input.Decoder.Decode(in, &output); err != nil {
 						return nil, err
 					}
@@ -64,10 +64,10 @@ func TestSerial_Execute(t *testing.T) {
 					return o.Output{"name": "world"}, nil
 				}),
 				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
-					in := map[string]interface{}{
+					in := map[string]any{
 						"hello": "${say_name.output.name}",
 					}
-					output := make(map[string]interface{})
+					output := make(map[string]any)
 					if err := input.Decoder.Decode(in, &output); err != nil {
 						return nil, err
 					}

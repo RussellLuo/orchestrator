@@ -9,19 +9,19 @@ import (
 	"github.com/RussellLuo/structool"
 )
 
-type InputTemplate map[string]interface{}
+type InputTemplate map[string]any
 
 type Input struct {
 	Decoder *Decoder
 }
 
-func NewInput(input map[string]interface{}) Input {
+func NewInput(input map[string]any) Input {
 	decoder := NewDecoder()
 	decoder.AddInput("context", input)
 	return Input{Decoder: decoder}
 }
 
-type Output map[string]interface{}
+type Output map[string]any
 
 func (o Output) SetTerminated() {
 	o["terminated"] = true
@@ -81,7 +81,7 @@ func (r Registry) Construct(decoder *structool.Codec, def *TaskDefinition) (Task
 	return factory.Constructor(decoder, def)
 }
 
-func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]interface{}) (Task, error) {
+func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]any) (Task, error) {
 	codec := structool.New().TagName("orchestrator").DecodeHook(
 		structool.DecodeStringToDuration,
 	)
@@ -94,7 +94,7 @@ func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]interf
 }
 
 func (r Registry) ConstructFromJSON(decoder *structool.Codec, data []byte) (Task, error) {
-	var m map[string]interface{}
+	var m map[string]any
 	if err := json.Unmarshal(data, &m); err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func Construct(decoder *structool.Codec, def *TaskDefinition) (Task, error) {
 	return GlobalRegistry.Construct(decoder, def)
 }
 
-func ConstructFromMap(decoder *structool.Codec, m map[string]interface{}) (Task, error) {
+func ConstructFromMap(decoder *structool.Codec, m map[string]any) (Task, error) {
 	return GlobalRegistry.ConstructFromMap(decoder, m)
 }
 

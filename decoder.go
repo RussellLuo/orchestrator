@@ -10,13 +10,13 @@ import (
 )
 
 type Decoder struct {
-	data  map[string]interface{}
+	data  map[string]any
 	codec *structool.Codec
 }
 
 func NewDecoder() *Decoder {
 	d := &Decoder{
-		data: make(map[string]interface{}),
+		data: make(map[string]any),
 	}
 	d.codec = structool.New().TagName("orchestrator").DecodeHook(
 		structool.DecodeStringToDuration,
@@ -25,32 +25,32 @@ func NewDecoder() *Decoder {
 	return d
 }
 
-func (d *Decoder) AddInput(taskName string, input map[string]interface{}) {
+func (d *Decoder) AddInput(taskName string, input map[string]any) {
 	d.addIO(taskName, "input", input)
 }
 
-func (d *Decoder) AddOutput(taskName string, output map[string]interface{}) {
+func (d *Decoder) AddOutput(taskName string, output map[string]any) {
 	d.addIO(taskName, "output", output)
 }
 
-func (d *Decoder) addIO(taskName string, typ string, value map[string]interface{}) {
+func (d *Decoder) addIO(taskName string, typ string, value map[string]any) {
 	taskIO, ok := d.data[taskName]
 	if !ok {
-		taskIO = make(map[string]interface{})
+		taskIO = make(map[string]any)
 		d.data[taskName] = taskIO
 	}
-	io := taskIO.(map[string]interface{})
+	io := taskIO.(map[string]any)
 	io[typ] = value
 }
 
-func (d *Decoder) Decode(in interface{}, out interface{}) error {
+func (d *Decoder) Decode(in any, out any) error {
 	return d.codec.Decode(in, out)
 }
 
 func (d *Decoder) renderJSONPath(next structool.DecodeHookFunc) structool.DecodeHookFunc {
 	reVar := regexp.MustCompile(`\${([^}]+)}`)
 
-	return func(from, to reflect.Value) (interface{}, error) {
+	return func(from, to reflect.Value) (any, error) {
 		if from.Kind() != reflect.String {
 			return next(from, to)
 		}
@@ -91,7 +91,7 @@ func (d *Decoder) renderJSONPath(next structool.DecodeHookFunc) structool.Decode
 		default:
 			// template contains more than one variable, replace all the matched
 			// substrings with the result value.
-			var result interface{}
+			var result any
 			var err error
 			return reVar.ReplaceAllStringFunc(template, func(s string) string {
 				part := s[len("${") : len(s)-len("}")]
@@ -105,7 +105,7 @@ func (d *Decoder) renderJSONPath(next structool.DecodeHookFunc) structool.Decode
 	}
 }
 
-func (d *Decoder) evaluate(s string) (interface{}, error) {
+func (d *Decoder) evaluate(s string) (any, error) {
 	// Convert s to a valid JSON path.
 	path := "$." + s
 	return jsonpath.Get(path, d.data)
@@ -126,7 +126,7 @@ func decodeDefinitionToTask(r Registry, codec *structool.Codec) func(next struct
 	)
 
 	return func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
-		return func(from, to reflect.Value) (interface{}, error) {
+		return func(from, to reflect.Value) (any, error) {
 			if to.Type().String() != "orchestrator.Task" {
 				return next(from, to)
 			}

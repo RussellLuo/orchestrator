@@ -41,8 +41,8 @@ func MustRegisterHTTP(r orchestrator.Registry) {
 }
 
 type Codec interface {
-	Decode(in io.Reader, out interface{}) error
-	Encode(in interface{}) (out io.Reader, err error)
+	Decode(in io.Reader, out any) error
+	Encode(in any) (out io.Reader, err error)
 }
 
 func NewCodec(encoding string) (Codec, error) {
@@ -56,11 +56,11 @@ func NewCodec(encoding string) (Codec, error) {
 
 type JSON struct{}
 
-func (j JSON) Decode(in io.Reader, out interface{}) error {
+func (j JSON) Decode(in io.Reader, out any) error {
 	return json.NewDecoder(in).Decode(out)
 }
 
-func (j JSON) Encode(in interface{}) (io.Reader, error) {
+func (j JSON) Encode(in any) (io.Reader, error) {
 	data, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
@@ -76,17 +76,17 @@ type HTTP struct {
 	codec  Codec
 
 	Input struct {
-		Encoding string                 `orchestrator:"encoding"`
-		Method   string                 `orchestrator:"method"`
-		URI      string                 `orchestrator:"uri"`
-		Header   map[string][]string    `orchestrator:"header"`
-		Body     map[string]interface{} `orchestrator:"body"`
+		Encoding string              `orchestrator:"encoding"`
+		Method   string              `orchestrator:"method"`
+		URI      string              `orchestrator:"uri"`
+		Header   map[string][]string `orchestrator:"header"`
+		Body     map[string]any      `orchestrator:"body"`
 	}
 
 	Expression struct {
-		URI    string                 `orchestrator:"uri"`
-		Header map[string][]string    `orchestrator:"header"`
-		Body   map[string]interface{} `orchestrator:"body"`
+		URI    string              `orchestrator:"uri"`
+		Header map[string][]string `orchestrator:"header"`
+		Body   map[string]any      `orchestrator:"body"`
 	}
 }
 
@@ -153,7 +153,7 @@ func (h *HTTP) Header(key string, values ...string) *HTTP {
 	return h
 }
 
-func (h *HTTP) Body(body map[string]interface{}) *HTTP {
+func (h *HTTP) Body(body map[string]any) *HTTP {
 	h.Input.Body = body
 	return h
 }
@@ -203,7 +203,7 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	}
 	defer resp.Body.Close()
 
-	var respBody map[string]interface{}
+	var respBody map[string]any
 	if err := h.codec.Decode(resp.Body, &respBody); err != nil {
 		return nil, err
 	}

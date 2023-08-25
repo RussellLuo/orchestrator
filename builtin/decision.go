@@ -35,13 +35,13 @@ type Decision struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		Switch  interface{}                       `orchestrator:"switch"`
-		Cases   map[interface{}]orchestrator.Task `orchestrator:"cases"`
-		Default orchestrator.Task                 `orchestrator:"default"`
+		Switch  any                       `orchestrator:"switch"`
+		Cases   map[any]orchestrator.Task `orchestrator:"cases"`
+		Default orchestrator.Task         `orchestrator:"default"`
 	}
 
 	Expression struct {
-		Switch interface{} `orchestrator:"switch"`
+		Switch any `orchestrator:"switch"`
 	}
 }
 
@@ -59,14 +59,14 @@ func (d *Decision) Timeout(timeout time.Duration) *Decision {
 	return d
 }
 
-func (d *Decision) Switch(s interface{}) *Decision {
+func (d *Decision) Switch(s any) *Decision {
 	d.Input.Switch = s
 	return d
 }
 
-func (d *Decision) Case(c interface{}, task orchestrator.Task) *Decision {
+func (d *Decision) Case(c any, task orchestrator.Task) *Decision {
 	if d.Input.Cases == nil {
-		d.Input.Cases = make(map[interface{}]orchestrator.Task)
+		d.Input.Cases = make(map[any]orchestrator.Task)
 	}
 	d.Input.Cases[c] = task
 	return d
@@ -80,7 +80,7 @@ func (d *Decision) Default(task orchestrator.Task) *Decision {
 func (d *Decision) Name() string { return d.def.Name }
 
 func (d *Decision) String() string {
-	casesInputStrings := make(map[interface{}]string)
+	casesInputStrings := make(map[any]string)
 	for v, t := range d.Input.Cases {
 		casesInputStrings[v] = t.String()
 	}

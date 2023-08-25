@@ -19,14 +19,14 @@ func Example() {
 		),
 	)
 
-	input := orchestrator.NewInput(map[string]interface{}{"todoId": 1})
+	input := orchestrator.NewInput(map[string]any{"todoId": 1})
 	output, err := task.Execute(context.Background(), input)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	body := output["body"].(map[string]interface{})
+	body := output["body"].(map[string]any)
 	fmt.Println(body["name"])
 
 	// Output:
@@ -71,14 +71,14 @@ func Example_construct() {
 		return
 	}
 
-	input := orchestrator.NewInput(map[string]interface{}{"todoId": 1})
+	input := orchestrator.NewInput(map[string]any{"todoId": 1})
 	output, err := task.Execute(context.Background(), input)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	body := output["body"].(map[string]interface{})
+	body := output["body"].(map[string]any)
 	fmt.Println(body["name"])
 
 	// Output:
@@ -124,14 +124,14 @@ func Example_constructFromJSON() {
 		return
 	}
 
-	input := orchestrator.NewInput(map[string]interface{}{"todoId": 1})
+	input := orchestrator.NewInput(map[string]any{"todoId": 1})
 	output, err := task.Execute(context.Background(), input)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	body := output["body"].(map[string]interface{})
+	body := output["body"].(map[string]any)
 	fmt.Println(body["name"])
 
 	// Output:
