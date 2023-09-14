@@ -34,7 +34,7 @@ type Func struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		Func func(context.Context, orchestrator.Input) (orchestrator.Output, error) `orchestrator:"func"`
+		Func func(context.Context, orchestrator.Input) (orchestrator.Output, error) `json:"func"`
 	}
 }
 

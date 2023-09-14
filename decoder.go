@@ -18,7 +18,7 @@ func NewDecoder() *Decoder {
 	d := &Decoder{
 		data: make(map[string]any),
 	}
-	d.codec = structool.New().TagName("orchestrator").DecodeHook(
+	d.codec = structool.New().TagName("json").DecodeHook(
 		structool.DecodeStringToDuration,
 		d.renderJSONPath,
 	)
@@ -112,7 +112,7 @@ func (d *Decoder) evaluate(s string) (any, error) {
 }
 
 func NewConstructDecoder(r Registry) *structool.Codec {
-	codec := structool.New().TagName("orchestrator")
+	codec := structool.New().TagName("json")
 	codec.DecodeHook(
 		structool.DecodeStringToDuration,
 		decodeDefinitionToTask(r, codec),
@@ -121,7 +121,7 @@ func NewConstructDecoder(r Registry) *structool.Codec {
 }
 
 func decodeDefinitionToTask(r Registry, codec *structool.Codec) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
-	c := structool.New().TagName("orchestrator").DecodeHook(
+	c := structool.New().TagName("json").DecodeHook(
 		structool.DecodeStringToDuration,
 	)
 

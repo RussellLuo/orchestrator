@@ -34,7 +34,7 @@ type Terminate struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		Output orchestrator.Output `orchestrator:"output"`
+		Output orchestrator.Output `json:"output"`
 	}
 }
 

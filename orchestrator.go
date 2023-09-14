@@ -33,10 +33,10 @@ func (o Output) IsTerminated() bool {
 }
 
 type TaskDefinition struct {
-	Name          string        `json:"name" yaml:"name" orchestrator:"name"`
-	Type          string        `json:"type" yaml:"type" orchestrator:"type"`
-	Timeout       time.Duration `json:"timeout" yaml:"timeout" orchestrator:"timeout"`
-	InputTemplate InputTemplate `json:"input" yaml:"input" orchestrator:"input"`
+	Name          string        `json:"name" yaml:"name"`
+	Type          string        `json:"type" yaml:"type"`
+	Timeout       time.Duration `json:"timeout" yaml:"timeout"`
+	InputTemplate InputTemplate `json:"input" yaml:"input"`
 }
 
 type Task interface {
@@ -82,7 +82,7 @@ func (r Registry) Construct(decoder *structool.Codec, def *TaskDefinition) (Task
 }
 
 func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]any) (Task, error) {
-	codec := structool.New().TagName("orchestrator").DecodeHook(
+	codec := structool.New().TagName("json").DecodeHook(
 		structool.DecodeStringToDuration,
 	)
 	var def *TaskDefinition

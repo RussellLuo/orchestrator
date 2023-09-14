@@ -76,17 +76,17 @@ type HTTP struct {
 	codec  Codec
 
 	Input struct {
-		Encoding string              `orchestrator:"encoding"`
-		Method   string              `orchestrator:"method"`
-		URI      string              `orchestrator:"uri"`
-		Header   map[string][]string `orchestrator:"header"`
-		Body     map[string]any      `orchestrator:"body"`
+		Encoding string              `json:"encoding"`
+		Method   string              `json:"method"`
+		URI      string              `json:"uri"`
+		Header   map[string][]string `json:"header"`
+		Body     map[string]any      `json:"body"`
 	}
 
 	Expression struct {
-		URI    string              `orchestrator:"uri"`
-		Header map[string][]string `orchestrator:"header"`
-		Body   map[string]any      `orchestrator:"body"`
+		URI    string              `json:"uri"`
+		Header map[string][]string `json:"header"`
+		Body   map[string]any      `json:"body"`
 	}
 }
 

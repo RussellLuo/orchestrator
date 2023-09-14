@@ -36,7 +36,7 @@ type Parallel struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		Tasks []orchestrator.Task `orchestrator:"tasks"`
+		Tasks []orchestrator.Task `json:"tasks"`
 	}
 }
 

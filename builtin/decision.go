@@ -35,13 +35,13 @@ type Decision struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		Switch  any                       `orchestrator:"switch"`
-		Cases   map[any]orchestrator.Task `orchestrator:"cases"`
-		Default orchestrator.Task         `orchestrator:"default"`
+		Switch  any                       `json:"switch"`
+		Cases   map[any]orchestrator.Task `json:"cases"`
+		Default orchestrator.Task         `json:"default"`
 	}
 
 	Expression struct {
-		Switch any `orchestrator:"switch"`
+		Switch any `json:"switch"`
 	}
 }
 

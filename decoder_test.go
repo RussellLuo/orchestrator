@@ -12,12 +12,12 @@ import (
 
 func TestDecoder_Decode(t *testing.T) {
 	type Out struct {
-		A string        `orchestrator:"a"`
-		B int           `orchestrator:"b"`
-		C string        `orchestrator:"c"`
-		D string        `orchestrator:"d"`
-		E string        `orchestrator:"e"`
-		F time.Duration `orchestrator:"f"`
+		A string        `json:"a"`
+		B int           `json:"b"`
+		C string        `json:"c"`
+		D string        `json:"d"`
+		E string        `json:"e"`
+		F time.Duration `json:"f"`
 	}
 
 	decoder := orchestrator.NewDecoder()
