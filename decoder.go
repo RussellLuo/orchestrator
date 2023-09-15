@@ -9,106 +9,167 @@ import (
 	"github.com/RussellLuo/structool"
 )
 
-type Decoder struct {
-	data  map[string]any
-	codec *structool.Codec
+var (
+	reVar = regexp.MustCompile(`\${([^}]+)}`)
+
+	defaultCodec = structool.New().TagName("json").DecodeHook(
+		structool.DecodeStringToDuration,
+	)
+)
+
+type Evaluator struct {
+	data map[string]any
 }
 
-func NewDecoder() *Decoder {
-	d := &Decoder{
+func NewEvaluator() *Evaluator {
+	return &Evaluator{
 		data: make(map[string]any),
 	}
-	d.codec = structool.New().TagName("json").DecodeHook(
-		structool.DecodeStringToDuration,
-		d.renderJSONPath,
-	)
-	return d
 }
 
-func (d *Decoder) AddInput(taskName string, input map[string]any) {
-	d.addIO(taskName, "input", input)
+func (e *Evaluator) AddInput(taskName string, input map[string]any) {
+	e.addIO(taskName, "input", input)
 }
 
-func (d *Decoder) AddOutput(taskName string, output map[string]any) {
-	d.addIO(taskName, "output", output)
+func (e *Evaluator) AddOutput(taskName string, output map[string]any) {
+	e.addIO(taskName, "output", output)
 }
 
-func (d *Decoder) addIO(taskName string, typ string, value map[string]any) {
-	taskIO, ok := d.data[taskName]
+func (e *Evaluator) addIO(taskName string, typ string, value map[string]any) {
+	taskIO, ok := e.data[taskName]
 	if !ok {
 		taskIO = make(map[string]any)
-		d.data[taskName] = taskIO
+		e.data[taskName] = taskIO
 	}
 	io := taskIO.(map[string]any)
 	io[typ] = value
 }
 
-func (d *Decoder) Decode(in any, out any) error {
-	return d.codec.Decode(in, out)
-}
+// Evaluate evaluates the expression s.
+func (e *Evaluator) Evaluate(s string) (any, error) {
+	matches := reVar.FindStringSubmatch(s)
+	switch len(matches) {
+	case 0: // expression s contains no variable, return it as the result value.
+		return s, nil
 
-func (d *Decoder) renderJSONPath(next structool.DecodeHookFunc) structool.DecodeHookFunc {
-	reVar := regexp.MustCompile(`\${([^}]+)}`)
+	case 1: // unreachable case
+		return s, nil
 
-	return func(from, to reflect.Value) (any, error) {
-		if from.Kind() != reflect.String {
-			return next(from, to)
+	case 2: // expression s contains only one variable.
+		if matches[0] == s {
+			// The variable is the whole string, return the raw result value.
+			return e.evaluateVar(matches[1])
 		}
 
-		template := from.Interface().(string)
-		matches := reVar.FindStringSubmatch(template)
+		// The variable is just a substring of expression s, replace the substring
+		// with the result value.
+		fallthrough
 
-		switch len(matches) {
-		case 0: // template contains no variable, return it as the result value.
-			return next(from, to)
-
-		case 1: // unreachable case
-			return next(from, to)
-
-		case 2: // template contains only one variable.
-			if matches[0] == template {
-				// The variable is the whole string.
-
-				result, err := d.evaluate(matches[1])
-				if err != nil {
-					return nil, err
-				}
-
-				if to.Kind() == reflect.String {
-					// The target value is of type string, convert the result
-					// value to be a string and return it.
-					return fmt.Sprintf("%v", result), nil
-				}
-
-				// Return the raw result value.
-				return result, nil
+	default:
+		// expression s contains more than one variable, replace all the matched
+		// substrings with the result value.
+		var result any
+		var err error
+		return reVar.ReplaceAllStringFunc(s, func(s string) string {
+			part := s[len("${") : len(s)-len("}")]
+			result, err = e.evaluateVar(part)
+			if err != nil {
+				return s
 			}
-
-			// The variable is just a substring of template, replace the substring
-			// with the result value.
-			fallthrough
-
-		default:
-			// template contains more than one variable, replace all the matched
-			// substrings with the result value.
-			var result any
-			var err error
-			return reVar.ReplaceAllStringFunc(template, func(s string) string {
-				part := s[len("${") : len(s)-len("}")]
-				result, err = d.evaluate(part)
-				if err != nil {
-					return s
-				}
-				return fmt.Sprintf("%v", result)
-			}), err
-		}
+			return fmt.Sprintf("%v", result)
+		}), err
 	}
 }
 
-func (d *Decoder) evaluate(s string) (any, error) {
+func (e *Evaluator) evaluateVar(s string) (any, error) {
 	// Convert s to a valid JSON path.
 	path := "$." + s
-	return jsonpath.Get(path, d.data)
+	return jsonpath.Get(path, e.data)
+}
+
+// Expr represents an expression.
+type Expr[T any] struct {
+	Expr  any
+	Value T
+}
+
+func (e *Expr[T]) DecodeMapStructure(value any) error {
+	e.Expr = value
+	return nil
+}
+
+func (e *Expr[T]) Evaluate(input Input) error {
+	out, err := Evaluate(e.Expr, input.Evaluate)
+	if err != nil {
+		return err
+	}
+	return defaultCodec.Decode(out, &e.Value)
+}
+
+// Evaluate traverses the value v and recursively evaluate every possible
+// expression string. It will return a new copy of v in which every expression
+// has been evaluated.
+func Evaluate(v any, f func(string) (any, error)) (any, error) {
+	if v == nil {
+		return v, nil
+	}
+
+	value := reflect.ValueOf(v)
+	typ := value.Type()
+
+	switch value.Kind() {
+	case reflect.Map:
+		m := reflect.MakeMap(typ)
+		for _, key := range value.MapKeys() {
+			// Recursively evaluate the map value.
+			//
+			// NOTE: We assume that only map values contain expression variables.
+			out, err := Evaluate(value.MapIndex(key).Interface(), f)
+			if err != nil {
+				return nil, err
+			}
+			m.SetMapIndex(key, reflect.ValueOf(out))
+		}
+		return m.Interface(), nil
+
+	case reflect.Slice, reflect.Array:
+		s := reflect.MakeSlice(typ, 0, value.Len())
+		for i := 0; i < value.Len(); i++ {
+			// Recursively evaluate the slice/array element.
+			out, err := Evaluate(value.Index(i).Interface(), f)
+			if err != nil {
+				return nil, err
+			}
+			s = reflect.Append(s, reflect.ValueOf(out))
+		}
+		return s.Interface(), nil
+
+	/*
+		case reflect.Ptr:
+			p := reflect.New(typ.Elem())
+			// Recursively evaluate the value the pointer points to.
+			out, err := Evaluate(value.Elem().Interface(), f)
+			if err != nil {
+				return nil, err
+			}
+			p.Elem().Set(reflect.ValueOf(out))
+			return p.Interface(), nil
+	*/
+
+	case reflect.String:
+		// Evaluate the possible expression string.
+		return f(value.Interface().(string))
+
+	case reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		// It's impossible for these basic types to hold an expression, so just return the value as is.
+		return value.Interface(), nil
+
+	default:
+		return nil, fmt.Errorf("unsupported type %T", value)
+	}
 }
 
 func NewConstructDecoder(r Registry) *structool.Codec {
@@ -121,10 +182,6 @@ func NewConstructDecoder(r Registry) *structool.Codec {
 }
 
 func decodeDefinitionToTask(r Registry, codec *structool.Codec) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
-	c := structool.New().TagName("json").DecodeHook(
-		structool.DecodeStringToDuration,
-	)
-
 	return func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
 		return func(from, to reflect.Value) (any, error) {
 			if to.Type().String() != "orchestrator.Task" {
@@ -132,7 +189,7 @@ func decodeDefinitionToTask(r Registry, codec *structool.Codec) func(next struct
 			}
 
 			var def *TaskDefinition
-			if err := c.Decode(from.Interface(), &def); err != nil {
+			if err := defaultCodec.Decode(from.Interface(), &def); err != nil {
 				return nil, err
 			}
 

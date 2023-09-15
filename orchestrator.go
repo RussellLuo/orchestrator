@@ -12,13 +12,13 @@ import (
 type InputTemplate map[string]any
 
 type Input struct {
-	Decoder *Decoder
+	*Evaluator
 }
 
 func NewInput(input map[string]any) Input {
-	decoder := NewDecoder()
-	decoder.AddInput("context", input)
-	return Input{Decoder: decoder}
+	evaluator := NewEvaluator()
+	evaluator.AddInput("context", input)
+	return Input{Evaluator: evaluator}
 }
 
 type Output map[string]any

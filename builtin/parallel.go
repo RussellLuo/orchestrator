@@ -3,6 +3,7 @@ package builtin
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -106,6 +107,8 @@ func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orche
 	}
 
 	if len(errors) > 0 {
+		// Sort the original error messages to get a new error with a predictable message.
+		sort.Strings(errors)
 		return nil, fmt.Errorf("%s", strings.Join(errors, "; "))
 	}
 	return output, nil

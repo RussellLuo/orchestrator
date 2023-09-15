@@ -76,17 +76,11 @@ type HTTP struct {
 	codec  Codec
 
 	Input struct {
-		Encoding string              `json:"encoding"`
-		Method   string              `json:"method"`
-		URI      string              `json:"uri"`
-		Header   map[string][]string `json:"header"`
-		Body     map[string]any      `json:"body"`
-	}
-
-	Expression struct {
-		URI    string              `json:"uri"`
-		Header map[string][]string `json:"header"`
-		Body   map[string]any      `json:"body"`
+		Encoding string                                 `json:"encoding"`
+		Method   string                                 `json:"method"`
+		URI      orchestrator.Expr[string]              `json:"uri"`
+		Header   orchestrator.Expr[map[string][]string] `json:"header"`
+		Body     orchestrator.Expr[map[string]any]      `json:"body"`
 	}
 }
 
@@ -121,7 +115,7 @@ func (h *HTTP) Encoding(encoding string) *HTTP {
 
 func (h *HTTP) Request(method, uri string) *HTTP {
 	h.Input.Method = method
-	h.Input.URI = uri
+	h.Input.URI = orchestrator.Expr[string]{Expr: uri}
 	return h
 }
 
@@ -145,6 +139,7 @@ func (h *HTTP) Delete(uri string) *HTTP {
 	return h.Request("DELETE", uri)
 }
 
+/*
 func (h *HTTP) Header(key string, values ...string) *HTTP {
 	if h.Input.Header == nil {
 		h.Input.Header = make(map[string][]string)
@@ -152,9 +147,10 @@ func (h *HTTP) Header(key string, values ...string) *HTTP {
 	h.Input.Header[key] = values
 	return h
 }
+*/
 
 func (h *HTTP) Body(body map[string]any) *HTTP {
-	h.Input.Body = body
+	h.Input.Body = orchestrator.Expr[map[string]any]{Expr: body}
 	return h
 }
 
@@ -162,36 +158,42 @@ func (h *HTTP) Name() string { return h.def.Name }
 
 func (h *HTTP) String() string {
 	return fmt.Sprintf(
-		"%s(name:%s, timeout:%s, request:%s %s, header:%s, body:%s)",
+		"%s(name:%s, timeout:%s, request:%s %v, header:%v, body:%v)",
 		h.def.Type,
 		h.def.Name,
 		h.def.Timeout,
 		h.Input.Method,
-		h.Input.URI,
-		h.Input.Header,
-		h.Input.Body,
+		h.Input.URI.Expr,
+		h.Input.Header.Expr,
+		h.Input.Body.Expr,
 	)
 }
 
 func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	if err := input.Decoder.Decode(h.Input, &h.Expression); err != nil {
+	if err := h.Input.URI.Evaluate(input); err != nil {
+		return nil, err
+	}
+	if err := h.Input.Header.Evaluate(input); err != nil {
+		return nil, err
+	}
+	if err := h.Input.Body.Evaluate(input); err != nil {
 		return nil, err
 	}
 
 	var body io.Reader
-	if len(h.Expression.Body) > 0 {
-		out, err := h.codec.Encode(h.Expression.Body)
+	if len(h.Input.Body.Value) > 0 {
+		out, err := h.codec.Encode(h.Input.Body.Value)
 		if err != nil {
 			return nil, err
 		}
 		body = out
 	}
 
-	req, err := http.NewRequest(h.Input.Method, h.Expression.URI, body)
+	req, err := http.NewRequest(h.Input.Method, h.Input.URI.Value, body)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range h.Expression.Header {
+	for k, v := range h.Input.Header.Value {
 		for _, vv := range v {
 			req.Header.Add(k, vv)
 		}

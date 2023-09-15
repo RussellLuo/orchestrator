@@ -27,14 +27,15 @@ func TestTerminate(t *testing.T) {
 					"goodbye": "${say_name.output.name}",
 				}),
 				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
-					in := map[string]any{
-						"hello": "${say_name.output.name}",
+					in := o.Expr[map[string]any]{
+						Expr: map[string]any{
+							"hello": "${say_name.output.name}",
+						},
 					}
-					output := make(map[string]any)
-					if err := input.Decoder.Decode(in, &output); err != nil {
+					if err := in.Evaluate(input); err != nil {
 						return nil, err
 					}
-					return output, nil
+					return in.Value, nil
 				}),
 			),
 			wantOutput: o.Output{

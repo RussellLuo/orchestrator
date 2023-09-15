@@ -10,50 +10,6 @@ import (
 	"github.com/RussellLuo/orchestrator/builtin"
 )
 
-func TestDecoder_Decode(t *testing.T) {
-	type Out struct {
-		A string        `json:"a"`
-		B int           `json:"b"`
-		C string        `json:"c"`
-		D string        `json:"d"`
-		E string        `json:"e"`
-		F time.Duration `json:"f"`
-	}
-
-	decoder := orchestrator.NewDecoder()
-	decoder.AddInput("task1", map[string]any{
-		"value": "1",
-	})
-	decoder.AddOutput("task2", map[string]any{
-		"value": 2,
-	})
-
-	in := map[string]any{
-		"a": "${task1.input.value}",
-		"b": "${task2.output.value}",
-		"c": "/posts/${task2.output.value}",
-		"d": "${task1.input.value}.${task2.output.value}",
-		"e": "task.output.value",
-		"f": "3s",
-	}
-	var out Out
-	if err := decoder.Decode(in, &out); err != nil {
-		t.Fatalf("Err: %v", err)
-	}
-
-	wantOut := Out{
-		A: "1",
-		B: 2,
-		C: "/posts/2",
-		D: "1.2",
-		E: "task.output.value",
-		F: 3 * time.Second,
-	}
-	if !reflect.DeepEqual(out, wantOut) {
-		t.Fatalf("Out: Got (%#v) != Want (%#v)", out, wantOut)
-	}
-}
-
 func TestConstructDecoder(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -125,7 +81,7 @@ func TestConstructDecoder(t *testing.T) {
 					"uri":    "https://example.com",
 				},
 			},
-			wantTaskInput: "http(name:count, timeout:1s, request:GET https://example.com, header:map[], body:map[])",
+			wantTaskInput: "http(name:count, timeout:1s, request:GET https://example.com, header:<nil>, body:<nil>)",
 		},
 		{
 			name: "decision",
@@ -161,7 +117,7 @@ func TestConstructDecoder(t *testing.T) {
 				Type:    builtin.TypeTerminate,
 				Timeout: time.Second,
 				InputTemplate: orchestrator.InputTemplate{
-					"output": nil,
+					"output": map[string]any(nil),
 				},
 			},
 			wantTaskInput: "terminate(name:count, output:map[])",
@@ -185,6 +141,53 @@ func TestConstructDecoder(t *testing.T) {
 
 			if task.String() != tt.wantTaskInput {
 				t.Fatalf("Task Input: Got (%#v) != Want (%#v)", task.String(), tt.wantTaskInput)
+			}
+		})
+	}
+}
+
+func TestEvaluate(t *testing.T) {
+	input := orchestrator.NewInput(map[string]any{
+		"key1": "value",
+		"key2": 0,
+		"key3": true,
+	})
+
+	tests := []struct {
+		name    string
+		in      any
+		wantOut any
+	}{
+		{
+			name:    "string",
+			in:      "${context.input.key1}",
+			wantOut: "value",
+		},
+		{
+			name:    "array",
+			in:      []string{"${context.input.key1}"},
+			wantOut: []string{"value"},
+		},
+		{
+			name:    "map",
+			in:      map[string]any{"key": "${context.input.key2}"},
+			wantOut: map[string]any{"key": 0},
+		},
+		{
+			name:    "nested map",
+			in:      map[string]any{"outer": map[string]any{"inner": "${context.input.key3}"}},
+			wantOut: map[string]any{"outer": map[string]any{"inner": true}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, err := orchestrator.Evaluate(tt.in, input.Evaluate)
+			if err != nil {
+				t.Fatalf("Err: %v", err)
+			}
+			if !reflect.DeepEqual(out, tt.wantOut) {
+				t.Fatalf("Out: Got (%#v) != Want (%#v)", out, tt.wantOut)
 			}
 		})
 	}

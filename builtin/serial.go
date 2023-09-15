@@ -119,7 +119,7 @@ func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output 
 			return output, nil
 		}
 
-		input.Decoder.AddOutput(t.Name(), output)
+		input.AddOutput(t.Name(), output)
 	}
 	return output, nil
 }

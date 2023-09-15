@@ -34,7 +34,7 @@ type Terminate struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		Output orchestrator.Output `json:"output"`
+		Output orchestrator.Expr[orchestrator.Output] `json:"output"`
 	}
 }
 
@@ -47,23 +47,23 @@ func NewTerminate(name string) *Terminate {
 	}
 }
 
-func (t *Terminate) Output(output orchestrator.Output) *Terminate {
-	t.Input.Output = output
+func (t *Terminate) Output(output any) *Terminate {
+	t.Input.Output = orchestrator.Expr[orchestrator.Output]{Expr: output}
 	return t
 }
 
 func (t *Terminate) Name() string { return t.def.Name }
 
 func (t *Terminate) String() string {
-	return fmt.Sprintf("%s(name:%s, output:%v)", t.def.Type, t.def.Name, t.Input.Output)
+	return fmt.Sprintf("%s(name:%s, output:%v)", t.def.Type, t.def.Name, t.Input.Output.Expr)
 }
 
 func (t *Terminate) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	output := orchestrator.Output{}
-	if err := input.Decoder.Decode(t.Input.Output, &output); err != nil {
+	if err := t.Input.Output.Evaluate(input); err != nil {
 		return nil, err
 	}
 
+	output := t.Input.Output.Value
 	output.SetTerminated()
 	return output, nil
 }

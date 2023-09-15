@@ -35,13 +35,9 @@ type Decision struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		Switch  any                       `json:"switch"`
+		Switch  orchestrator.Expr[any]    `json:"switch"`
 		Cases   map[any]orchestrator.Task `json:"cases"`
 		Default orchestrator.Task         `json:"default"`
-	}
-
-	Expression struct {
-		Switch any `json:"switch"`
 	}
 }
 
@@ -60,7 +56,7 @@ func (d *Decision) Timeout(timeout time.Duration) *Decision {
 }
 
 func (d *Decision) Switch(s any) *Decision {
-	d.Input.Switch = s
+	d.Input.Switch = orchestrator.Expr[any]{Expr: s}
 	return d
 }
 
@@ -95,18 +91,18 @@ func (d *Decision) String() string {
 		d.def.Type,
 		d.def.Name,
 		d.def.Timeout,
-		d.Input.Switch,
+		d.Input.Switch.Expr,
 		casesInputStrings,
 		defaultInputString,
 	)
 }
 
 func (d *Decision) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	if err := input.Decoder.Decode(d.Input, &d.Expression); err != nil {
+	if err := d.Input.Switch.Evaluate(input); err != nil {
 		return nil, err
 	}
 
-	task, ok := d.Input.Cases[d.Expression.Switch]
+	task, ok := d.Input.Cases[d.Input.Switch.Value]
 	if !ok {
 		if d.Input.Default != nil {
 			return d.Input.Default.Execute(ctx, input)
