@@ -84,7 +84,10 @@ func (e *Evaluator) Evaluate(s string) (any, error) {
 			}
 			return fmt.Sprintf("%v", result)
 		})
-		return result, fmt.Errorf("%s", strings.Join(errors, "; "))
+		if len(errors) > 0 {
+			return nil, fmt.Errorf(strings.Join(errors, "; "))
+		}
+		return result, nil
 	}
 }
 
