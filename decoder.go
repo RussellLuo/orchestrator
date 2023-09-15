@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/PaesslerAG/jsonpath"
 	"github.com/RussellLuo/structool"
@@ -57,8 +58,13 @@ func (e *Evaluator) Evaluate(s string) (any, error) {
 
 	case 2: // expression s contains only one variable.
 		if matches[0] == s {
-			// The variable is the whole string, return the raw result value.
-			return e.evaluateVar(matches[1])
+			// The variable is the whole string.
+			result, err := e.evaluateVar(matches[1])
+			if err != nil {
+				return nil, fmt.Errorf("failed to evaluate '%s': %v", s, err)
+			}
+			// Return the raw result value.
+			return result, nil
 		}
 
 		// The variable is just a substring of expression s, replace the substring
@@ -68,16 +74,17 @@ func (e *Evaluator) Evaluate(s string) (any, error) {
 	default:
 		// expression s contains more than one variable, replace all the matched
 		// substrings with the result value.
-		var result any
-		var err error
-		return reVar.ReplaceAllStringFunc(s, func(s string) string {
+		var errors []string
+		result := reVar.ReplaceAllStringFunc(s, func(s string) string {
 			part := s[len("${") : len(s)-len("}")]
-			result, err = e.evaluateVar(part)
+			result, err := e.evaluateVar(part)
 			if err != nil {
+				errors = append(errors, fmt.Sprintf("failed to evaluate '%s': %v", s, err))
 				return s
 			}
 			return fmt.Sprintf("%v", result)
-		}), err
+		})
+		return result, fmt.Errorf("%s", strings.Join(errors, "; "))
 	}
 }
 
@@ -106,9 +113,11 @@ func (e *Expr[T]) Evaluate(input Input) error {
 	return defaultCodec.Decode(out, &e.Value)
 }
 
-// Evaluate traverses the value v and recursively evaluate every possible
-// expression string. It will return a new copy of v in which every expression
-// has been evaluated.
+// Evaluate will return a copy of v in which all expressions have been
+// replaced by the return value of function f.
+//
+// To achieve this, it traverses the value v and recursively evaluate
+// every possible expression (of type string).
 func Evaluate(v any, f func(string) (any, error)) (any, error) {
 	if v == nil {
 		return v, nil
@@ -168,7 +177,7 @@ func Evaluate(v any, f func(string) (any, error)) (any, error) {
 		return value.Interface(), nil
 
 	default:
-		return nil, fmt.Errorf("unsupported type %T", value)
+		return nil, fmt.Errorf("unsupported type %T", value.Interface())
 	}
 }
 
