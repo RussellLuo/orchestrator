@@ -13,7 +13,7 @@ import (
 var (
 	reVar = regexp.MustCompile(`\${([^}]+)}`)
 
-	defaultCodec = structool.New().TagName("json").DecodeHook(
+	DefaultCodec = structool.New().TagName("json").DecodeHook(
 		structool.DecodeStringToDuration,
 	)
 )
@@ -110,7 +110,7 @@ func (e *Expr[T]) Evaluate(input Input) error {
 	if err != nil {
 		return err
 	}
-	return defaultCodec.Decode(out, &e.Value)
+	return DefaultCodec.Decode(out, &e.Value)
 }
 
 // Evaluate will return a copy of v in which all expressions have been
@@ -198,7 +198,7 @@ func decodeDefinitionToTask(r Registry, codec *structool.Codec) func(next struct
 			}
 
 			var def *TaskDefinition
-			if err := defaultCodec.Decode(from.Interface(), &def); err != nil {
+			if err := DefaultCodec.Decode(from.Interface(), &def); err != nil {
 				return nil, err
 			}
 
