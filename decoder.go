@@ -8,10 +8,21 @@ import (
 
 	"github.com/PaesslerAG/jsonpath"
 	"github.com/RussellLuo/structool"
+	"github.com/antonmedv/expr"
 )
 
 var (
-	reVar = regexp.MustCompile(`\${([^}]+)}`)
+	// JSONPath expression (https://github.com/PaesslerAG/jsonpath):
+	//
+	//   ${...}
+	//
+	// Expr expression (https://github.com/antonmedv/expr):
+	//
+	//   #{...}
+	reExpr = regexp.MustCompile(`(?:\$|#){[^}]+}`)
+
+	// reVar is like reExpr but actually extracts the leading character and the variable.
+	reVar = regexp.MustCompile(`^(\$|#){([^}]+)}$`)
 
 	DefaultCodec = structool.New().TagName("json").DecodeHook(
 		structool.DecodeStringToDuration,
@@ -48,18 +59,16 @@ func (e *Evaluator) addIO(taskName string, typ string, value map[string]any) {
 
 // Evaluate evaluates the expression s.
 func (e *Evaluator) Evaluate(s string) (any, error) {
-	matches := reVar.FindStringSubmatch(s)
+	matches := reExpr.FindAllStringSubmatch(s, -1)
 	switch len(matches) {
 	case 0: // expression s contains no variable, return it as the result value.
 		return s, nil
 
-	case 1: // unreachable case
-		return s, nil
-
-	case 2: // expression s contains only one variable.
-		if matches[0] == s {
+	case 1: // expression s contains only one variable.
+		m := matches[0][0]
+		if m == s {
 			// The variable is the whole string.
-			result, err := e.evaluateVar(matches[1])
+			result, err := e.evaluate(m)
 			if err != nil {
 				return nil, fmt.Errorf("failed to evaluate '%s': %v", s, err)
 			}
@@ -75,9 +84,8 @@ func (e *Evaluator) Evaluate(s string) (any, error) {
 		// expression s contains more than one variable, replace all the matched
 		// substrings with the result value.
 		var errors []string
-		result := reVar.ReplaceAllStringFunc(s, func(s string) string {
-			part := s[len("${") : len(s)-len("}")]
-			result, err := e.evaluateVar(part)
+		result := reExpr.ReplaceAllStringFunc(s, func(s string) string {
+			result, err := e.evaluate(s)
 			if err != nil {
 				errors = append(errors, fmt.Sprintf("failed to evaluate '%s': %v", s, err))
 				return s
@@ -91,10 +99,44 @@ func (e *Evaluator) Evaluate(s string) (any, error) {
 	}
 }
 
-func (e *Evaluator) evaluateVar(s string) (any, error) {
+// evaluate evaluates a single expression variable.
+func (e *Evaluator) evaluate(s string) (any, error) {
+	matches := reVar.FindStringSubmatch(s)
+	if len(matches) != 3 {
+		return nil, fmt.Errorf("bad expression: %s", s)
+	}
+
+	dialect, variable := matches[1], matches[2]
+	switch dialect {
+	case "$": // JSONPath
+		return e.evaluateJSONPathVar(variable)
+	case "#": // Expr
+		return e.evaluateExprVar(variable)
+	default:
+		return nil, fmt.Errorf("bad expression: %s", s)
+	}
+}
+
+func (e *Evaluator) evaluateJSONPathVar(s string) (any, error) {
 	// Convert s to a valid JSON path.
 	path := "$." + s
 	return jsonpath.Get(path, e.data)
+}
+
+func (e *Evaluator) evaluateExprVar(s string) (any, error) {
+	env := e.data
+
+	program, err := expr.Compile(s, expr.Env(env))
+	if err != nil {
+		return nil, err
+	}
+
+	output, err := expr.Run(program, env)
+	if err != nil {
+		return nil, err
+	}
+	//fmt.Printf("raw expr: %s, evaluated to: %v\n", s, output)
+	return output, nil
 }
 
 // Expr represents an expression.

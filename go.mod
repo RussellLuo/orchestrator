@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/RussellLuo/structool v0.0.0-20230915010420-41b17257d885
+	github.com/antonmedv/expr v1.15.2
 )
 
 require (
