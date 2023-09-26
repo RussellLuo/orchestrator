@@ -18,12 +18,12 @@ func TestLoop_Execute(t *testing.T) {
 		wantErr    string
 	}{
 		{
-			name: "loop in",
+			name: "loop list",
 			inInput: map[string]any{
-				"array": []any{0, 1, 2},
+				"list": []any{0, 1, 2},
 			},
 			inTask: builtin.NewLoop("test").
-				Iterator(builtin.NewIterate("iterator").In("${context.input.array}")).
+				Iterator(builtin.NewIterate("iterator").List("${context.input.list}")).
 				Body(builtin.NewFunc("body").Func(func(_ context.Context, input o.Input) (o.Output, error) {
 					value := o.Expr[any]{Expr: "${iterator.output.value}"}
 					if err := value.Evaluate(input); err != nil {
@@ -39,13 +39,16 @@ func TestLoop_Execute(t *testing.T) {
 			},
 		},
 		{
-			name: "loop range",
+			name: "loop map",
 			inInput: map[string]any{
-				"start": 3,
-				"stop":  6,
+				"map": map[string]any{
+					"3": 3,
+					"4": 4,
+					"5": 5,
+				},
 			},
 			inTask: builtin.NewLoop("test").
-				Iterator(builtin.NewIterate("iterator").Range([]any{"${context.input.start}", "${context.input.stop}"})).
+				Iterator(builtin.NewIterate("iterator").Map("${context.input.map}")).
 				Body(builtin.NewFunc("body").Func(func(_ context.Context, input o.Input) (o.Output, error) {
 					value := o.Expr[any]{Expr: "${iterator.output.value}"}
 					if err := value.Evaluate(input); err != nil {
@@ -58,6 +61,28 @@ func TestLoop_Execute(t *testing.T) {
 				"0":         map[string]any{"value": 3},
 				"1":         map[string]any{"value": 4},
 				"2":         map[string]any{"value": 5},
+			},
+		},
+		{
+			name: "loop range",
+			inInput: map[string]any{
+				"start": 6,
+				"stop":  9,
+			},
+			inTask: builtin.NewLoop("test").
+				Iterator(builtin.NewIterate("iterator").Range([]any{"${context.input.start}", "${context.input.stop}"})).
+				Body(builtin.NewFunc("body").Func(func(_ context.Context, input o.Input) (o.Output, error) {
+					value := o.Expr[any]{Expr: "${iterator.output.value}"}
+					if err := value.Evaluate(input); err != nil {
+						return nil, err
+					}
+					return o.Output{"value": value.Value}, nil
+				})),
+			wantOutput: o.Output{
+				"iteration": 3,
+				"0":         map[string]any{"value": 6},
+				"1":         map[string]any{"value": 7},
+				"2":         map[string]any{"value": 8},
 			},
 		},
 	}

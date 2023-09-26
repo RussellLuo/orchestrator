@@ -3,13 +3,20 @@ package builtin
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/RussellLuo/orchestrator"
 	"github.com/RussellLuo/structool"
 )
 
+type IterateType string
+
 const (
 	TypeIterate = "iterate"
+
+	IterateTypeList  IterateType = "list"
+	IterateTypeMap   IterateType = "map"
+	IterateTypeRange IterateType = "range"
 )
 
 func init() {
@@ -35,8 +42,8 @@ type Iterate struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
-		In    orchestrator.Expr[any]   `json:"in,omitempty"`
-		Range orchestrator.Expr[[]int] `json:"range,omitempty"`
+		Type  IterateType `json:"type"`
+		Value any         `json:"value"`
 	}
 }
 
@@ -49,13 +56,21 @@ func NewIterate(name string) *Iterate {
 	}
 }
 
-func (i *Iterate) In(in any) *Iterate {
-	i.Input.In = orchestrator.Expr[any]{Expr: in}
+func (i *Iterate) List(v any) *Iterate {
+	i.Input.Type = IterateTypeList
+	i.Input.Value = v
 	return i
 }
 
-func (i *Iterate) Range(range_ any) *Iterate {
-	i.Input.Range = orchestrator.Expr[[]int]{Expr: range_}
+func (i *Iterate) Map(v any) *Iterate {
+	i.Input.Type = IterateTypeMap
+	i.Input.Value = v
+	return i
+}
+
+func (i *Iterate) Range(v any) *Iterate {
+	i.Input.Type = IterateTypeRange
+	i.Input.Value = v
 	return i
 }
 
@@ -71,24 +86,40 @@ func (i *Iterate) String() string {
 }
 
 func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	if i.Input.In.Expr == nil && i.Input.Range.Expr == nil {
-		return nil, fmt.Errorf("neither 'in' nor 'range' was set")
+	if i.Input.Value == nil {
+		return nil, fmt.Errorf("bad iterate value")
 	}
 
-	if i.Input.In.Expr != nil && i.Input.Range.Expr != nil {
-		return nil, fmt.Errorf("only one of 'in' and 'range' can be set")
-	}
-
-	if i.Input.In.Expr != nil {
-		if err := i.Input.In.Evaluate(input); err != nil {
+	var value any
+	switch i.Input.Type {
+	case IterateTypeList:
+		expr := orchestrator.Expr[[]any]{Expr: i.Input.Value}
+		if err := expr.Evaluate(input); err != nil {
 			return nil, err
 		}
-	}
+		value = expr.Value
 
-	if i.Input.Range.Expr != nil {
-		if err := i.Input.Range.Evaluate(input); err != nil {
+	case IterateTypeMap:
+		expr := orchestrator.Expr[map[string]any]{Expr: i.Input.Value}
+		if err := expr.Evaluate(input); err != nil {
 			return nil, err
 		}
+		value = expr.Value
+
+	case IterateTypeRange:
+		expr := orchestrator.Expr[[]int]{Expr: i.Input.Value}
+		if err := expr.Evaluate(input); err != nil {
+			return nil, err
+		}
+		switch len(expr.Value) {
+		case 2, 3:
+		default:
+			return nil, fmt.Errorf("bad iterate value length: want 2 or 3 but got %d", len(expr.Value))
+		}
+		value = expr.Value
+
+	default:
+		return nil, fmt.Errorf(`bad iterate type: must be one of [%q, %q, %q]`, IterateTypeList, IterateTypeMap, IterateTypeRange)
 	}
 
 	iterator := NewIterator(func(ctx context.Context, ch chan<- Result) {
@@ -101,38 +132,39 @@ func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orches
 			}
 		}
 
-		if i.Input.In.Value != nil {
-			switch value := i.Input.In.Value.(type) {
-			case []any:
-				for _, v := range value {
-					if continue_ := send(orchestrator.Output{"value": v}, nil); !continue_ {
-						return
-					}
+		switch i.Input.Type {
+		case IterateTypeList:
+			vList := value.([]any)
+			for _, v := range vList {
+				if continue_ := send(orchestrator.Output{"value": v}, nil); !continue_ {
+					return
 				}
-			case map[string]any:
-				for k, v := range value {
-					if continue_ := send(orchestrator.Output{"key": k, "value": v}, nil); !continue_ {
-						return
-					}
-				}
-			default:
-				send(nil, fmt.Errorf("bad in: want slice or map but got %T", value))
-				return
 			}
-		}
 
-		if len(i.Input.Range.Value) > 0 {
-			value := i.Input.Range.Value
+		case IterateTypeMap:
+			vMap := value.(map[string]any)
+
+			// Sort map keys in ascending order.
+			var keys []string
+			for k := range vMap {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+
+			for _, k := range keys {
+				if continue_ := send(orchestrator.Output{"key": k, "value": vMap[k]}, nil); !continue_ {
+					return
+				}
+			}
+
+		case IterateTypeRange:
 			var start, stop, step int
-
-			switch len(value) {
+			vRange := value.([]int)
+			switch len(vRange) {
 			case 2:
-				start, stop, step = value[0], value[1], 1
+				start, stop, step = vRange[0], vRange[1], 1
 			case 3:
-				start, stop, step = value[0], value[1], value[2]
-			default:
-				send(nil, fmt.Errorf("bad range length: want 2 or 3 but got %d", len(value)))
-				return
+				start, stop, step = vRange[0], vRange[1], vRange[2]
 			}
 			for n := start; n < stop; n += step {
 				if continue_ := send(orchestrator.Output{"value": n}, nil); !continue_ {
