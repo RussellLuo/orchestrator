@@ -24,12 +24,12 @@ func TestTerminate(t *testing.T) {
 					return o.Output{"name": "world"}, nil
 				}),
 				builtin.NewTerminate("say_goodbye").Output(o.Output{
-					"goodbye": "${say_name.output.name}",
+					"goodbye": "${say_name.name}",
 				}),
 				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
 					in := o.Expr[map[string]any]{
 						Expr: map[string]any{
-							"hello": "${say_name.output.name}",
+							"hello": "${say_name.name}",
 						},
 					}
 					if err := in.Evaluate(input); err != nil {

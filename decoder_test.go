@@ -160,22 +160,22 @@ func TestEvaluate(t *testing.T) {
 	}{
 		{
 			name:    "string",
-			in:      "${context.input.key1}",
+			in:      "${input.key1}",
 			wantOut: "value",
 		},
 		{
 			name:    "array",
-			in:      []string{"${context.input.key1}"},
+			in:      []string{"${input.key1}"},
 			wantOut: []string{"value"},
 		},
 		{
 			name:    "map",
-			in:      map[string]any{"key": "${context.input.key2}"},
+			in:      map[string]any{"key": "${input.key2}"},
 			wantOut: map[string]any{"key": 0},
 		},
 		{
 			name:    "nested map",
-			in:      map[string]any{"outer": map[string]any{"inner": "${context.input.key3}"}},
+			in:      map[string]any{"outer": map[string]any{"inner": "${input.key3}"}},
 			wantOut: map[string]any{"outer": map[string]any{"inner": true}},
 		},
 	}

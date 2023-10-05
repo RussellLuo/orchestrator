@@ -43,7 +43,7 @@ func TestDecision_Execute(t *testing.T) {
 		{
 			name: "switch template",
 			inTask: builtin.NewDecision("test").
-				Switch("${context.input.value}").
+				Switch("${input.value}").
 				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "case_0"}, nil
 				})).

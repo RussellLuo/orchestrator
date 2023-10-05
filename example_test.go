@@ -12,10 +12,10 @@ import (
 func Example() {
 	task := builtin.NewSerial("get_todo_user").Timeout(3*time.Second).Tasks(
 		builtin.NewHTTP("get_todo").Timeout(2*time.Second).Get(
-			"https://jsonplaceholder.typicode.com/todos/${context.input.todoId}",
+			"https://jsonplaceholder.typicode.com/todos/${input.todoId}",
 		),
 		builtin.NewHTTP("get_user").Timeout(2*time.Second).Get(
-			"https://jsonplaceholder.typicode.com/users/${get_todo.output.body.userId}",
+			"https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}",
 		),
 	)
 
@@ -51,7 +51,7 @@ func Example_construct() {
 					Timeout: 2 * time.Second,
 					InputTemplate: orchestrator.InputTemplate{
 						"method": "GET",
-						"uri":    "https://jsonplaceholder.typicode.com/todos/${context.input.todoId}",
+						"uri":    "https://jsonplaceholder.typicode.com/todos/${input.todoId}",
 					},
 				},
 				{
@@ -60,7 +60,7 @@ func Example_construct() {
 					Timeout: 2 * time.Second,
 					InputTemplate: orchestrator.InputTemplate{
 						"method": "GET",
-						"uri":    "https://jsonplaceholder.typicode.com/users/${get_todo.output.body.userId}",
+						"uri":    "https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}",
 					},
 				},
 			},
@@ -102,7 +102,7 @@ func Example_constructFromJSON() {
         "timeout": "2s",
         "input": {
           "method": "GET",
-          "uri": "https://jsonplaceholder.typicode.com/todos/${context.input.todoId}"
+          "uri": "https://jsonplaceholder.typicode.com/todos/${input.todoId}"
         }
       },
       {
@@ -111,7 +111,7 @@ func Example_constructFromJSON() {
         "timeout": "2s",
         "input": {
           "method": "GET",
-          "uri": "https://jsonplaceholder.typicode.com/users/${get_todo.output.body.userId}"
+          "uri": "https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}"
         }
       }
     ]

@@ -23,9 +23,9 @@ func TestLoop_Execute(t *testing.T) {
 				"list": []any{0, 1, 2},
 			},
 			inTask: builtin.NewLoop("test").
-				Iterator(builtin.NewIterate("iterator").List("${context.input.list}")).
+				Iterator(builtin.NewIterate("iterator").List("${input.list}")).
 				Body(builtin.NewFunc("body").Func(func(_ context.Context, input o.Input) (o.Output, error) {
-					value := o.Expr[any]{Expr: "${iterator.output.value}"}
+					value := o.Expr[any]{Expr: "${iterator.value}"}
 					if err := value.Evaluate(input); err != nil {
 						return nil, err
 					}
@@ -48,9 +48,9 @@ func TestLoop_Execute(t *testing.T) {
 				},
 			},
 			inTask: builtin.NewLoop("test").
-				Iterator(builtin.NewIterate("iterator").Map("${context.input.map}")).
+				Iterator(builtin.NewIterate("iterator").Map("${input.map}")).
 				Body(builtin.NewFunc("body").Func(func(_ context.Context, input o.Input) (o.Output, error) {
-					value := o.Expr[any]{Expr: "${iterator.output.value}"}
+					value := o.Expr[any]{Expr: "${iterator.value}"}
 					if err := value.Evaluate(input); err != nil {
 						return nil, err
 					}
@@ -70,9 +70,9 @@ func TestLoop_Execute(t *testing.T) {
 				"stop":  9,
 			},
 			inTask: builtin.NewLoop("test").
-				Iterator(builtin.NewIterate("iterator").Range([]any{"${context.input.start}", "${context.input.stop}"})).
+				Iterator(builtin.NewIterate("iterator").Range([]any{"${input.start}", "${input.stop}"})).
 				Body(builtin.NewFunc("body").Func(func(_ context.Context, input o.Input) (o.Output, error) {
-					value := o.Expr[any]{Expr: "${iterator.output.value}"}
+					value := o.Expr[any]{Expr: "${iterator.value}"}
 					if err := value.Evaluate(input); err != nil {
 						return nil, err
 					}

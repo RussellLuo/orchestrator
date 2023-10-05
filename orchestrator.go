@@ -17,7 +17,7 @@ type Input struct {
 
 func NewInput(input map[string]any) Input {
 	evaluator := NewEvaluator()
-	evaluator.AddInput("context", input)
+	evaluator.Add("input", input)
 	return Input{Evaluator: evaluator}
 }
 

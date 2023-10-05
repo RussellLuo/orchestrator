@@ -99,7 +99,7 @@ func (l *Loop) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 			return nil, result.Err
 		}
 		// Set the output of the iterator task for the current iteration.
-		input.AddOutput(iterName, result.Output)
+		input.Add(iterName, result.Output)
 
 		o, err := l.Input.Body.Execute(ctx, input)
 		if err != nil {

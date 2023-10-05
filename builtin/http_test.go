@@ -12,7 +12,7 @@ import (
 
 func TestHTTP_Execute(t *testing.T) {
 	task := builtin.NewHTTP("test").Timeout(2 * time.Second).Get(
-		"https://jsonplaceholder.typicode.com/todos/${context.input.todoId}",
+		"https://jsonplaceholder.typicode.com/todos/${input.todoId}",
 	)
 
 	input := orchestrator.NewInput(map[string]any{"todoId": 1})

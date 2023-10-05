@@ -39,22 +39,8 @@ func NewEvaluator() *Evaluator {
 	}
 }
 
-func (e *Evaluator) AddInput(taskName string, input map[string]any) {
-	e.addIO(taskName, "input", input)
-}
-
-func (e *Evaluator) AddOutput(taskName string, output map[string]any) {
-	e.addIO(taskName, "output", output)
-}
-
-func (e *Evaluator) addIO(taskName string, typ string, value map[string]any) {
-	taskIO, ok := e.data[taskName]
-	if !ok {
-		taskIO = make(map[string]any)
-		e.data[taskName] = taskIO
-	}
-	io := taskIO.(map[string]any)
-	io[typ] = value
+func (e *Evaluator) Add(taskName string, value map[string]any) {
+	e.data[taskName] = value
 }
 
 // Evaluate evaluates the expression s.

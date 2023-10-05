@@ -26,7 +26,7 @@ func TestSerial_Execute(t *testing.T) {
 				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
 					in := o.Expr[map[string]any]{
 						Expr: map[string]any{
-							"hello": "${say_name.output.name}",
+							"hello": "${say_name.name}",
 						},
 					}
 					if err := in.Evaluate(input); err != nil {
@@ -46,7 +46,7 @@ func TestSerial_Execute(t *testing.T) {
 				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
 					in := o.Expr[map[string]any]{
 						Expr: map[string]any{
-							"hello": "${say_name.output.name}",
+							"hello": "${say_name.name}",
 						},
 					}
 					if err := in.Evaluate(input); err != nil {
@@ -68,7 +68,7 @@ func TestSerial_Execute(t *testing.T) {
 				builtin.NewFunc("say_hello").Func(func(ctx context.Context, input o.Input) (o.Output, error) {
 					in := o.Expr[map[string]any]{
 						Expr: map[string]any{
-							"hello": "${say_name.output.name}",
+							"hello": "${say_name.name}",
 						},
 					}
 					if err := in.Evaluate(input); err != nil {
