@@ -106,6 +106,10 @@ func (e *Evaluator) evaluate(s string) (any, error) {
 func (e *Evaluator) evaluateJSONPathVar(s string) (any, error) {
 	// Convert s to a valid JSON path.
 	path := "$." + s
+	if s == "*" {
+		// A single asterisk means to get the root object.
+		path = "$"
+	}
 	return jsonpath.Get(path, e.data)
 }
 

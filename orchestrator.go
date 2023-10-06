@@ -27,6 +27,10 @@ func (o Output) SetTerminated() {
 	o["terminated"] = true
 }
 
+func (o Output) ClearTerminated() {
+	delete(o, "terminated")
+}
+
 func (o Output) IsTerminated() bool {
 	terminated, ok := o["terminated"].(bool)
 	return ok && terminated

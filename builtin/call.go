@@ -105,8 +105,18 @@ func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		return nil, err
 	}
 
+	// Create a new input since the process will enter a new scope.
 	taskInput := orchestrator.NewInput(c.Input.Input.Value)
-	return c.task.Execute(ctx, taskInput)
+	output, err := c.task.Execute(ctx, taskInput)
+	if err != nil {
+		return nil, err
+	}
+
+	// Clear the terminated flag since it only works within the task's scope.
+	if output.IsTerminated() {
+		output.ClearTerminated()
+	}
+	return output, nil
 }
 
 type Loader interface {
