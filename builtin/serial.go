@@ -104,6 +104,10 @@ func (s *Serial) String() string {
 	)
 }
 
+func (s *Serial) Validate(input map[string]any) error {
+	return s.def.Schema.Validate(input)
+}
+
 func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
 	return executeWithTimeout(ctx, input, s.def.Timeout, s.execute)
 }

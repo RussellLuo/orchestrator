@@ -102,14 +102,21 @@ func (c *Call) String() string {
 
 func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
 	if err := c.Input.Input.Evaluate(input); err != nil {
-		return nil, err
+		return nil, c.wrapError(err)
 	}
 
-	// Create a new input since the process will enter a new scope.
+	// Validate the task input against the task schema.
+	if validator, ok := c.task.(orchestrator.Validator); ok {
+		if err := validator.Validate(c.Input.Input.Value); err != nil {
+			return nil, c.wrapError(err)
+		}
+	}
+
+	// Create a new context input since the process will enter a new scope.
 	taskInput := orchestrator.NewInput(c.Input.Input.Value)
 	output, err := c.task.Execute(ctx, taskInput)
 	if err != nil {
-		return nil, err
+		return nil, c.wrapError(err)
 	}
 
 	// Clear the terminated flag since it only works within the task's scope.
@@ -117,6 +124,10 @@ func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		output.ClearTerminated()
 	}
 	return output, nil
+}
+
+func (c *Call) wrapError(err error) error {
+	return fmt.Errorf("calling task %q: %w", c.task.Name(), err)
 }
 
 type Loader interface {

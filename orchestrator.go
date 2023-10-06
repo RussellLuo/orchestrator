@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/RussellLuo/structool"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 type InputTemplate map[string]any
@@ -36,11 +38,43 @@ func (o Output) IsTerminated() bool {
 	return ok && terminated
 }
 
+type Schema struct {
+	Input  map[string]any `json:"input"`
+	Output map[string]any `json:"output"`
+}
+
+func (s Schema) Validate(input map[string]any) error {
+	if len(s.Input) == 0 {
+		// No input schema specified, do no validation.
+		return nil
+	}
+
+	schemaLoader := gojsonschema.NewGoLoader(s.Input)
+	inputLoader := gojsonschema.NewGoLoader(input)
+
+	result, err := gojsonschema.Validate(schemaLoader, inputLoader)
+	if err != nil {
+		return err
+	}
+
+	if !result.Valid() {
+		var errors []string
+		for _, err := range result.Errors() {
+			errors = append(errors, err.String())
+		}
+		return fmt.Errorf(strings.Join(errors, "; "))
+	}
+
+	return nil
+}
+
 type TaskDefinition struct {
-	Name          string        `json:"name" yaml:"name"`
-	Type          string        `json:"type" yaml:"type"`
-	Timeout       time.Duration `json:"timeout" yaml:"timeout"`
-	InputTemplate InputTemplate `json:"input" yaml:"input"`
+	Name          string        `json:"name"`
+	Type          string        `json:"type"`
+	Description   string        `json:"description"`
+	Schema        Schema        `json:"schema"`
+	Timeout       time.Duration `json:"timeout"`
+	InputTemplate InputTemplate `json:"input"`
 }
 
 type Task interface {
@@ -52,6 +86,11 @@ type Task interface {
 
 	// Execute executes the task with the given input.
 	Execute(context.Context, Input) (Output, error)
+}
+
+type Validator interface {
+	// Validate validates the given input against the task's schema.
+	Validate(map[string]any) error
 }
 
 type TaskFactory struct {
