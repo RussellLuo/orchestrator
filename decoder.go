@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -114,7 +115,12 @@ func (e *Evaluator) evaluateJSONPathVar(s string) (any, error) {
 }
 
 func (e *Evaluator) evaluateExprVar(s string) (any, error) {
-	env := e.data
+	env := map[string]any{
+		"getenv": os.Getenv,
+	}
+	for k, v := range e.data {
+		env[k] = v
+	}
 
 	program, err := expr.Compile(s, expr.Env(env))
 	if err != nil {
