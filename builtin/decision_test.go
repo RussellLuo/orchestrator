@@ -19,7 +19,7 @@ func TestDecision_Execute(t *testing.T) {
 		{
 			name: "case hit",
 			inTask: builtin.NewDecision("test").
-				Switch(0).
+				Expression(0).
 				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "case_0"}, nil
 				})).
@@ -31,7 +31,7 @@ func TestDecision_Execute(t *testing.T) {
 		{
 			name: "default hit",
 			inTask: builtin.NewDecision("test").
-				Switch(1).
+				Expression(1).
 				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "case_0"}, nil
 				})).
@@ -43,7 +43,7 @@ func TestDecision_Execute(t *testing.T) {
 		{
 			name: "switch template",
 			inTask: builtin.NewDecision("test").
-				Switch("${input.value}").
+				Expression("${input.value}").
 				Case(0, builtin.NewFunc("case_0").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "case_0"}, nil
 				})).

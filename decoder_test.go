@@ -89,7 +89,7 @@ func TestConstructDecoder(t *testing.T) {
 				Name: "test",
 				Type: builtin.TypeDecision,
 				InputTemplate: orchestrator.InputTemplate{
-					"switch": 0,
+					"expression": 0,
 					"cases": map[int]*orchestrator.TaskDefinition{
 						0: {
 							Name: "case_0",
@@ -108,7 +108,7 @@ func TestConstructDecoder(t *testing.T) {
 					},
 				},
 			},
-			wantTaskInput: "decision(name:test, timeout:0s, switch:0, cases:map[0:func(name:case_0)], default:func(name:default))",
+			wantTaskInput: "decision(name:test, timeout:0s, expression:0, cases:map[0:func(name:case_0)], default:func(name:default))",
 		},
 		{
 			name: "terminate",
