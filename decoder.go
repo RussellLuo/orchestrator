@@ -44,6 +44,11 @@ func (e *Evaluator) Add(taskName string, value map[string]any) {
 	e.data[taskName] = value
 }
 
+func (e *Evaluator) Get(taskName string) map[string]any {
+	value, _ := e.data[taskName].(map[string]any)
+	return value
+}
+
 // Evaluate evaluates the expression s.
 func (e *Evaluator) Evaluate(s string) (any, error) {
 	matches := reExpr.FindAllStringSubmatch(s, -1)

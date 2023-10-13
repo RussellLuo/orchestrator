@@ -65,6 +65,11 @@ type Serial struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
+		// The optional schema for the following series of subtasks.
+		//
+		// Typically, the schema is required for a standalone workflow.
+		Schema orchestrator.Schema `json:schema,omitempty`
+
 		Tasks []orchestrator.Task `json:"tasks"`
 	}
 }
@@ -104,11 +109,11 @@ func (s *Serial) String() string {
 	)
 }
 
-func (s *Serial) Validate(input map[string]any) error {
-	return s.def.Schema.Validate(input)
-}
-
 func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
+	// Validate the external input against the schema.
+	if err := s.Input.Schema.Validate(input.Get("input")); err != nil {
+		return nil, err
+	}
 	return executeWithTimeout(ctx, input, s.def.Timeout, s.execute)
 }
 

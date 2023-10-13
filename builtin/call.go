@@ -105,13 +105,6 @@ func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		return nil, c.wrapError(err)
 	}
 
-	// Validate the task input against the task schema.
-	if validator, ok := c.task.(orchestrator.Validator); ok {
-		if err := validator.Validate(c.Input.Input.Value); err != nil {
-			return nil, c.wrapError(err)
-		}
-	}
-
 	// Create a new context input since the process will enter a new scope.
 	taskInput := orchestrator.NewInput(c.Input.Input.Value)
 	output, err := c.task.Execute(ctx, taskInput)

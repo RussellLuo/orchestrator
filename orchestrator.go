@@ -88,11 +88,6 @@ type Task interface {
 	Execute(context.Context, Input) (Output, error)
 }
 
-type Validator interface {
-	// Validate validates the given input against the task's schema.
-	Validate(map[string]any) error
-}
-
 type TaskFactory struct {
 	Type        string
 	Constructor func(*structool.Codec, *TaskDefinition) (Task, error)
