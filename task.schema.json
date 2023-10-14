@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "required": [
+    "name",
+    "type",
+    "input"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "timeout": {
+      "type": "string"
+    },
+    "input": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {}
+      }
+    }
+  }
+}

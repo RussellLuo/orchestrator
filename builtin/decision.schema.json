@@ -1,0 +1,30 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "expression"
+    ],
+    "properties": {
+      "expression": {
+        "type": "string"
+      },
+      "cases": {
+        "type": "object",
+        "patternProperties": {
+          "^.*$": {
+            "$ref": "https://raw.githubusercontent.com/RussellLuo/orchestrator/master/task.schema.json"
+          }
+        }
+      },
+      "default": {
+        "$ref": "https://raw.githubusercontent.com/RussellLuo/orchestrator/master/task.schema.json"
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "patternProperties": {
+      "^.*$": {}
+    }
+  }
+}

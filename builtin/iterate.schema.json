@@ -1,0 +1,47 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "type",
+      "value"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": ["list", "map", "range"]
+      },
+      "value": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": {}
+            }
+          },
+          {
+            "type": "object",
+            "patternProperties": {
+              "^.*$": {}
+            }
+          },
+          {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "items": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "iterator": {
+        "type": "string"
+      }
+    }
+  }
+}

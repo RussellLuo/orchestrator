@@ -1,0 +1,22 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "output"
+    ],
+    "properties": {
+      "output": {
+        "type": "object",
+        "patternProperties": {
+          "^.*$": {}
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "patternProperties": {
+      "^.*$": {}
+    }
+  }
+}

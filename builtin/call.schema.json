@@ -1,0 +1,30 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "loader",
+      "task",
+      "input"
+    ],
+    "properties": {
+      "loader": {
+        "type": "string"
+      },
+      "task": {
+        "type": "string"
+      },
+      "input": {
+        "type": "object",
+        "patternProperties": {
+          "^.*$": {}
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "patternProperties": {
+      "^.*$": {}
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "tasks"
+    ],
+    "properties": {
+      "tasks": {
+        "type": "array",
+        "items": {
+          "$ref": "https://raw.githubusercontent.com/RussellLuo/orchestrator/master/task.schema.json"
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "patternProperties": {
+      "^.*$": {
+        "type": "object",
+        "patternProperties": {
+          "^.*$": {}
+        }
+      }
+    }
+  }
+}

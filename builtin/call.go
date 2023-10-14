@@ -2,7 +2,6 @@ package builtin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -135,14 +134,6 @@ func (l MapLoader) Load(name string) (map[string]any, error) {
 		return nil, fmt.Errorf("task named %q is not found", name)
 	}
 	return def, nil
-}
-
-func MustUnmarshalToMap(data []byte) map[string]any {
-	var m map[string]any
-	if err := json.Unmarshal(data, &m); err != nil {
-		panic(err)
-	}
-	return m
 }
 
 type loaderRegistry map[string]Loader

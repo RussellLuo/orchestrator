@@ -1,0 +1,37 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "tasks"
+    ],
+    "properties": {
+      "schema": {
+        "type": "object",
+        "required": [
+          "input",
+          "output"
+        ],
+        "properties": {
+          "input": {
+            "$ref": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "output": {
+            "$ref": "https://json-schema.org/draft/2020-12/schema"
+          }
+        }
+      },
+      "tasks": {
+        "type": "array",
+        "items": {
+          "$ref": "https://raw.githubusercontent.com/RussellLuo/orchestrator/master/task.schema.json"
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "patternProperties": {
+      "^.*$": {}
+    }
+  }
+}

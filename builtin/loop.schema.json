@@ -1,0 +1,28 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "iterator",
+      "body"
+    ],
+    "properties": {
+      "iterator": {
+        "$ref": "https://raw.githubusercontent.com/RussellLuo/orchestrator/master/task.schema.json"
+      },
+      "body": {
+        "$ref": "https://raw.githubusercontent.com/RussellLuo/orchestrator/master/task.schema.json"
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "iteration": {
+        "type": "integer"
+      }
+    },
+    "patternProperties": {
+      "^[0-9]+$": {}
+    }
+  }
+}

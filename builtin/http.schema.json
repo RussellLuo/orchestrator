@@ -1,0 +1,60 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "method",
+      "uri"
+    ],
+    "properties": {
+      "method": {
+        "type": "string",
+        "enum": ["POST", "GET", "PUT", "PATCH", "DELETE"]
+      },
+      "uri": {
+        "type": "string"
+      },
+      "header": {
+        "type": "object",
+        "patternProperties": {
+          "^.*$": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "patternProperties": {
+          "^.*$": {}
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "integer"
+      },
+      "header": {
+        "type": "object",
+        "patternProperties": {
+          "^.*$": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "patternProperties": {
+          "^.*$": {}
+        }
+      }
+    }
+  }
+}
