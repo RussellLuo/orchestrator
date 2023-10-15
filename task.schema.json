@@ -7,19 +7,24 @@
   ],
   "properties": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "description": "The name of the task. Task names must be unique within a flow. Likewise, flow names must be unique within a namespace."
     },
     "type": {
-      "type": "string"
+      "type": "string",
+      "description": "The type of the task. The type must be registered into Orchestrator for the task to be executed later."
     },
     "description": {
-      "type": "string"
+      "type": "string",
+      "description": "The description of the task. "
     },
     "timeout": {
-      "type": "string"
+      "type": "string",
+      "description": "The execution duration after which the task will be considered to have timed out."
     },
     "input": {
       "type": "object",
+      "description": "The input of the task.",
       "patternProperties": {
         "^.*$": {}
       }

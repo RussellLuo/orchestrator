@@ -1,4 +1,4 @@
-# orchestrator
+# Orchestrator
 
 A Go library for service orchestration, inspired by [Conductor][1].
 
@@ -9,7 +9,7 @@ A Go library for service orchestration, inspired by [Conductor][1].
 
 Tasks are the fundamental building blocks of Orchestrator. They are similar to primitive types or statements in a programming language.
 
-Typically, a task accepts an input and returns an output. Each parameter in the input can be a literal value or an [expression](#expression).
+Typically, a [task](task.schema.json) accepts an input and returns an output. Each parameter in the input can be a literal value or an [expression](#expression).
 
 Built-in tasks:
 
@@ -27,7 +27,7 @@ Built-in tasks:
 
 A flow is used to define a piece of logic, which usually consists of one or more tasks. Flows are similar to functions or routines in a programming language.
 
-In Orchestrator, a flow is essentially a composite task (i.e. a `Serial` task). Therefore, just like a task, a flow accepts an input and return an output. Furthermore, a flow can be embedded into another flow by leveraging a `Call` task, thus serving as a sub-flow.
+In Orchestrator, a flow is essentially a composite task (i.e. a `Serial` task). Therefore, just like a task, a flow accepts an input and returns an output. Furthermore, a flow can be embedded into another flow by leveraging a `Call` task, thus serving as a sub-flow.
 
 ### Expression
 
