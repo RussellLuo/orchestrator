@@ -77,7 +77,10 @@ func (l *Loop) String() string {
 }
 
 func (l *Loop) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	iterOutput, err := l.Input.Iterator.Execute(ctx, input)
+	trace := orchestrator.TraceFromContext(ctx).New(l.Name())
+	ctx = orchestrator.ContextWithTrace(ctx, trace)
+
+	iterOutput, err := trace.Wrap(l.Input.Iterator).Execute(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -100,8 +103,7 @@ func (l *Loop) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		}
 		// Set the output of the iterator task for the current iteration.
 		input.Add(iterName, result.Output)
-
-		o, err := l.Input.Body.Execute(ctx, input)
+		o, err := trace.Wrap(l.Input.Body).Execute(ctx, input)
 		if err != nil {
 			return nil, err
 		}

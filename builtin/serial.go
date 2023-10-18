@@ -118,8 +118,11 @@ func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchest
 }
 
 func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {
+	trace := orchestrator.TraceFromContext(ctx).New(s.Name())
+	ctx = orchestrator.ContextWithTrace(ctx, trace)
+
 	for _, t := range s.Input.Tasks {
-		output, err = t.Execute(ctx, input)
+		output, err = trace.Wrap(t).Execute(ctx, input)
 		if err != nil {
 			return nil, err
 		}
@@ -130,5 +133,6 @@ func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output 
 
 		input.Add(t.Name(), output)
 	}
+
 	return output, nil
 }

@@ -98,6 +98,9 @@ func (d *Decision) String() string {
 }
 
 func (d *Decision) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
+	trace := orchestrator.TraceFromContext(ctx).New(d.Name())
+	ctx = orchestrator.ContextWithTrace(ctx, trace)
+
 	if err := d.Input.Expression.Evaluate(input); err != nil {
 		return nil, err
 	}
@@ -105,10 +108,10 @@ func (d *Decision) Execute(ctx context.Context, input orchestrator.Input) (orche
 	task, ok := d.Input.Cases[d.Input.Expression.Value]
 	if !ok {
 		if d.Input.Default != nil {
-			return d.Input.Default.Execute(ctx, input)
+			return trace.Wrap(d.Input.Default).Execute(ctx, input)
 		}
 		return nil, nil
 	}
 
-	return task.Execute(ctx, input)
+	return trace.Wrap(task).Execute(ctx, input)
 }

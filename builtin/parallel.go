@@ -81,6 +81,9 @@ func (p *Parallel) Execute(ctx context.Context, input orchestrator.Input) (orche
 }
 
 func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
+	trace := orchestrator.TraceFromContext(ctx).New(p.Name())
+	ctx = orchestrator.ContextWithTrace(ctx, trace)
+
 	// Scatter
 	resultChan := make(chan Result, len(p.Input.Tasks))
 	for _, t := range p.Input.Tasks {
@@ -91,7 +94,7 @@ func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orche
 				Output: output,
 				Err:    err,
 			}
-		}(t)
+		}(trace.Wrap(t))
 	}
 
 	// Gather

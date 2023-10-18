@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/PaesslerAG/jsonpath"
 	"github.com/RussellLuo/structool"
@@ -26,7 +27,13 @@ var (
 	reVar = regexp.MustCompile(`^(\$|#){([^}]+)}$`)
 
 	DefaultCodec = structool.New().TagName("json").DecodeHook(
+		structool.DecodeStringToTime(time.RFC3339),
 		structool.DecodeStringToDuration,
+		structool.DecodeStringToError,
+	).EncodeHook(
+		structool.EncodeTimeToString(time.RFC3339),
+		structool.EncodeDurationToString,
+		structool.EncodeErrorToString,
 	)
 )
 

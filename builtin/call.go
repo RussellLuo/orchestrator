@@ -100,15 +100,18 @@ func (c *Call) String() string {
 }
 
 func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
+	trace := orchestrator.TraceFromContext(ctx).New(c.Name())
+	ctx = orchestrator.ContextWithTrace(ctx, trace)
+
 	if err := c.Input.Input.Evaluate(input); err != nil {
-		return nil, c.wrapError(err)
+		return nil, err
 	}
 
 	// Create a new context input since the process will enter a new scope.
 	taskInput := orchestrator.NewInput(c.Input.Input.Value)
-	output, err := c.task.Execute(ctx, taskInput)
+	output, err := trace.Wrap(c.task).Execute(ctx, taskInput)
 	if err != nil {
-		return nil, c.wrapError(err)
+		return nil, err
 	}
 
 	// Clear the terminated flag since it only works within the task's scope.
@@ -118,8 +121,39 @@ func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	return output, nil
 }
 
-func (c *Call) wrapError(err error) error {
-	return fmt.Errorf("calling task %q: %w", c.task.Name(), err)
+// CallFlow loads the given flow from the given loader, and then execute the flow with the given input.
+func CallFlow(ctx context.Context, loader, name string, input map[string]any) (orchestrator.Output, error) {
+	def := &orchestrator.TaskDefinition{
+		Name: "call",
+		Type: TypeCall,
+		InputTemplate: orchestrator.InputTemplate{
+			"loader": loader,
+			"task":   name,
+			"input":  input,
+		},
+	}
+	call, err := orchestrator.Construct(orchestrator.NewConstructDecoder(orchestrator.GlobalRegistry), def)
+	if err != nil {
+		return nil, err
+	}
+	return call.Execute(ctx, orchestrator.NewInput(nil))
+}
+
+// TraceFlow behaves like CallFlow but also enables tracing.
+func TraceFlow(ctx context.Context, loader, name string, input map[string]any) orchestrator.Event {
+	tr := orchestrator.NewTrace("root")
+	ctx = orchestrator.ContextWithTrace(ctx, tr)
+
+	output, err := CallFlow(ctx, loader, name, input)
+	tr.AddEvent("call", output, err)
+
+	// To be intuitive, expose the flow's single event from the call trace.
+	//
+	// root -> call -> flow (serial)
+	//  ^       ^        ^
+	// tr .Events()[0] .Events[0]
+	//
+	return tr.Events()[0].Events[0]
 }
 
 type Loader interface {
