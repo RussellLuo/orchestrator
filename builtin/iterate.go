@@ -23,7 +23,7 @@ func init() {
 	MustRegisterIterate(orchestrator.GlobalRegistry)
 }
 
-func MustRegisterIterate(r orchestrator.Registry) {
+func MustRegisterIterate(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeIterate,
 		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {

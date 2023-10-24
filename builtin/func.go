@@ -16,7 +16,7 @@ func init() {
 	MustRegisterFunc(orchestrator.GlobalRegistry)
 }
 
-func MustRegisterFunc(r orchestrator.Registry) {
+func MustRegisterFunc(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeFunc,
 		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {

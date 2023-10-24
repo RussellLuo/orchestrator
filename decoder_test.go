@@ -124,7 +124,7 @@ func TestConstructDecoder(t *testing.T) {
 		},
 	}
 
-	r := orchestrator.Registry{}
+	r := orchestrator.NewRegistry()
 	builtin.MustRegisterDecision(r)
 	builtin.MustRegisterFunc(r)
 	builtin.MustRegisterHTTP(r)
@@ -134,7 +134,7 @@ func TestConstructDecoder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, err := r.Construct(orchestrator.NewConstructDecoder(r), tt.inTaskDef)
+			task, err := r.Construct(tt.inTaskDef)
 			if err != nil {
 				t.Fatalf("Err: %v", err)
 			}

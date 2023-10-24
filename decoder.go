@@ -234,16 +234,7 @@ func Evaluate(v any, f func(string) (any, error)) (any, error) {
 	}
 }
 
-func NewConstructDecoder(r Registry) *structool.Codec {
-	codec := structool.New().TagName("json")
-	codec.DecodeHook(
-		structool.DecodeStringToDuration,
-		decodeDefinitionToTask(r, codec),
-	)
-	return codec
-}
-
-func decodeDefinitionToTask(r Registry, codec *structool.Codec) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
+func decodeDefinitionToTask(r *Registry) func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
 	return func(next structool.DecodeHookFunc) structool.DecodeHookFunc {
 		return func(from, to reflect.Value) (any, error) {
 			if to.Type().String() != "orchestrator.Task" {
@@ -255,7 +246,7 @@ func decodeDefinitionToTask(r Registry, codec *structool.Codec) func(next struct
 				return nil, err
 			}
 
-			task, err := r.Construct(codec, def)
+			task, err := r.Construct(def)
 			if err != nil {
 				return nil, err
 			}

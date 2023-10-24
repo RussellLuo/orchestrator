@@ -56,7 +56,7 @@ func Example_trace() {
 }
 
 func Example_constructFromJSON() {
-	r := orchestrator.Registry{}
+	r := orchestrator.NewRegistry()
 	builtin.MustRegisterSerial(r)
 	builtin.MustRegisterHTTP(r)
 
@@ -88,7 +88,7 @@ func Example_constructFromJSON() {
   }
 }`)
 
-	task, err := r.ConstructFromJSON(orchestrator.NewConstructDecoder(r), data)
+	task, err := r.ConstructFromJSON(data)
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -93,33 +93,46 @@ type TaskFactory struct {
 	Constructor func(*structool.Codec, *TaskDefinition) (Task, error)
 }
 
-type Registry map[string]*TaskFactory
+type Registry struct {
+	factories map[string]*TaskFactory
+	decoder   *structool.Codec
+}
 
-func (r Registry) Register(factory *TaskFactory) error {
-	if _, ok := r[factory.Type]; ok {
+func NewRegistry() *Registry {
+	r := new(Registry)
+	r.factories = make(map[string]*TaskFactory)
+	r.decoder = structool.New().TagName("json").DecodeHook(
+		structool.DecodeStringToDuration,
+		decodeDefinitionToTask(r),
+	)
+	return r
+}
+
+func (r *Registry) Register(factory *TaskFactory) error {
+	if _, ok := r.factories[factory.Type]; ok {
 		return fmt.Errorf("factory for task type %q is already registered", factory.Type)
 	}
 
-	r[factory.Type] = factory
+	r.factories[factory.Type] = factory
 	return nil
 }
 
 // MustRegister is like Register but panics if there is an error.
-func (r Registry) MustRegister(factory *TaskFactory) {
+func (r *Registry) MustRegister(factory *TaskFactory) {
 	if err := r.Register(factory); err != nil {
 		panic(err)
 	}
 }
 
-func (r Registry) Construct(decoder *structool.Codec, def *TaskDefinition) (Task, error) {
-	factory, ok := r[def.Type]
+func (r *Registry) Construct(def *TaskDefinition) (Task, error) {
+	factory, ok := r.factories[def.Type]
 	if !ok {
 		return nil, fmt.Errorf("factory for task type %q is not found", def.Type)
 	}
-	return factory.Constructor(decoder, def)
+	return factory.Constructor(r.decoder, def)
 }
 
-func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]any) (Task, error) {
+func (r *Registry) ConstructFromMap(m map[string]any) (Task, error) {
 	codec := structool.New().TagName("json").DecodeHook(
 		structool.DecodeStringToDuration,
 	)
@@ -128,32 +141,32 @@ func (r Registry) ConstructFromMap(decoder *structool.Codec, m map[string]any) (
 		return nil, err
 	}
 
-	return r.Construct(decoder, def)
+	return r.Construct(def)
 }
 
-func (r Registry) ConstructFromJSON(decoder *structool.Codec, data []byte) (Task, error) {
+func (r *Registry) ConstructFromJSON(data []byte) (Task, error) {
 	var m map[string]any
 	if err := json.Unmarshal(data, &m); err != nil {
 		return nil, err
 	}
 
-	return r.ConstructFromMap(decoder, m)
+	return r.ConstructFromMap(m)
 }
 
 func MustRegister(factory *TaskFactory) {
 	GlobalRegistry.MustRegister(factory)
 }
 
-func Construct(decoder *structool.Codec, def *TaskDefinition) (Task, error) {
-	return GlobalRegistry.Construct(decoder, def)
+func Construct(def *TaskDefinition) (Task, error) {
+	return GlobalRegistry.Construct(def)
 }
 
-func ConstructFromMap(decoder *structool.Codec, m map[string]any) (Task, error) {
-	return GlobalRegistry.ConstructFromMap(decoder, m)
+func ConstructFromMap(m map[string]any) (Task, error) {
+	return GlobalRegistry.ConstructFromMap(m)
 }
 
-func ConstructFromJSON(decoder *structool.Codec, data []byte) (Task, error) {
-	return GlobalRegistry.ConstructFromJSON(decoder, data)
+func ConstructFromJSON(data []byte) (Task, error) {
+	return GlobalRegistry.ConstructFromJSON(data)
 }
 
-var GlobalRegistry = Registry{}
+var GlobalRegistry = NewRegistry()

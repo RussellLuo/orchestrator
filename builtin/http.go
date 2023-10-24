@@ -21,7 +21,7 @@ func init() {
 	MustRegisterHTTP(orchestrator.GlobalRegistry)
 }
 
-func MustRegisterHTTP(r orchestrator.Registry) {
+func MustRegisterHTTP(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeHTTP,
 		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {

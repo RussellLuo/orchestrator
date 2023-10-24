@@ -17,7 +17,7 @@ func init() {
 	MustRegisterDecision(orchestrator.GlobalRegistry)
 }
 
-func MustRegisterDecision(r orchestrator.Registry) {
+func MustRegisterDecision(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeDecision,
 		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {

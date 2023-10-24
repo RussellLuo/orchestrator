@@ -16,7 +16,7 @@ func init() {
 	MustRegisterTerminate(orchestrator.GlobalRegistry)
 }
 
-func MustRegisterTerminate(r orchestrator.Registry) {
+func MustRegisterTerminate(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeTerminate,
 		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {

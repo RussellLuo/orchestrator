@@ -18,7 +18,7 @@ func init() {
 	MustRegisterLoop(orchestrator.GlobalRegistry)
 }
 
-func MustRegisterLoop(r orchestrator.Registry) {
+func MustRegisterLoop(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeLoop,
 		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {

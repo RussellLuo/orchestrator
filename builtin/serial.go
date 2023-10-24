@@ -18,7 +18,7 @@ func init() {
 	MustRegisterSerial(orchestrator.GlobalRegistry)
 }
 
-func MustRegisterSerial(r orchestrator.Registry) {
+func MustRegisterSerial(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeSerial,
 		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {

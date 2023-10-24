@@ -19,7 +19,7 @@ func init() {
 	MustRegisterParallel(orchestrator.GlobalRegistry)
 }
 
-func MustRegisterParallel(r orchestrator.Registry) {
+func MustRegisterParallel(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeParallel,
 		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
