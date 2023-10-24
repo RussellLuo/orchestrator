@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/RussellLuo/orchestrator"
-	"github.com/RussellLuo/structool"
 )
 
 const (
@@ -19,9 +18,9 @@ func init() {
 func MustRegisterTerminate(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeTerminate,
-		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
+		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
 			p := &Terminate{def: def}
-			if err := decoder.Decode(def.InputTemplate, &p.Input); err != nil {
+			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
 				return nil, err
 			}
 			return p, nil

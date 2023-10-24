@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/RussellLuo/orchestrator"
-	"github.com/RussellLuo/structool"
 )
 
 const (
@@ -20,9 +19,9 @@ func init() {
 func MustRegisterDecision(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeDecision,
-		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
+		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
 			p := &Decision{def: def}
-			if err := decoder.Decode(def.InputTemplate, &p.Input); err != nil {
+			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
 				return nil, err
 			}
 			return p, nil

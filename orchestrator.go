@@ -90,7 +90,7 @@ type Task interface {
 
 type TaskFactory struct {
 	Type        string
-	Constructor func(*structool.Codec, *TaskDefinition) (Task, error)
+	Constructor func(*TaskDefinition) (Task, error)
 }
 
 type Registry struct {
@@ -124,12 +124,16 @@ func (r *Registry) MustRegister(factory *TaskFactory) {
 	}
 }
 
+func (r *Registry) Decode(in interface{}, out interface{}) error {
+	return r.decoder.Decode(in, out)
+}
+
 func (r *Registry) Construct(def *TaskDefinition) (Task, error) {
 	factory, ok := r.factories[def.Type]
 	if !ok {
 		return nil, fmt.Errorf("factory for task type %q is not found", def.Type)
 	}
-	return factory.Constructor(r.decoder, def)
+	return factory.Constructor(def)
 }
 
 func (r *Registry) ConstructFromMap(m map[string]any) (Task, error) {

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/RussellLuo/orchestrator"
-	"github.com/RussellLuo/structool"
 )
 
 const (
@@ -20,24 +19,15 @@ func init() {
 func MustRegisterCall(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeCall,
-		Constructor: func(decoder *structool.Codec, def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			c := &Call{def: def}
-			if err := decoder.Decode(def.InputTemplate, &c.Input_); err != nil {
+		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
+			c := &Call{def: def, registry: r}
+			if err := r.Decode(def.InputTemplate, &c.Input_); err != nil {
 				return nil, err
 			}
 
-			loader, err := LoaderRegistry.Get(c.Input_.Loader)
-			if err != nil {
+			if err := c.loadTask(); err != nil {
 				return nil, err
 			}
-			taskDef, err := loader.Load(c.Input_.Task)
-			if err != nil {
-				return nil, err
-			}
-			if err := decoder.Decode(taskDef, &c.task); err != nil {
-				return nil, err
-			}
-
 			return c, nil
 		},
 	})
@@ -54,7 +44,8 @@ type Call struct {
 	}
 
 	// The actual task.
-	task orchestrator.Task
+	task     orchestrator.Task
+	registry *orchestrator.Registry
 }
 
 func NewCall(name string) *Call {
@@ -63,7 +54,13 @@ func NewCall(name string) *Call {
 			Name: name,
 			Type: TypeCall,
 		},
+		registry: orchestrator.GlobalRegistry,
 	}
+}
+
+func (c *Call) Registry(r *orchestrator.Registry) *Call {
+	c.registry = r
+	return c
 }
 
 func (c *Call) Timeout(timeout time.Duration) *Call {
@@ -84,6 +81,13 @@ func (c *Call) Task(name string) *Call {
 func (c *Call) Input(m map[string]any) *Call {
 	c.Input_.Input = orchestrator.Expr[map[string]any]{Expr: m}
 	return c
+}
+
+func (c *Call) Done() (*Call, error) {
+	if err := c.loadTask(); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func (c *Call) Name() string { return c.def.Name }
@@ -120,15 +124,39 @@ func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	return output, nil
 }
 
+func (c *Call) loadTask() error {
+	loader, err := LoaderRegistry.Get(c.Input_.Loader)
+	if err != nil {
+		return err
+	}
+	taskDef, err := loader.Load(c.Input_.Task)
+	if err != nil {
+		return err
+	}
+	return c.registry.Decode(taskDef, &c.task)
+}
+
 // CallFlow loads the given flow from the given loader, and then executes the flow with the given input.
+//
+// Note that CallFlow is a helper for calling flows which use tasks registered in
+// orchestrator.GlobalRegistry. If your case involves tasks registered in a different
+// registry, you need to write your own calling code, in which you need to construct
+// the call task yourself and specify the registry by using Call.Registry().
 func CallFlow(ctx context.Context, loader, name string, input map[string]any) (orchestrator.Output, error) {
-	call := NewCall("call").Loader(loader).Task(name).Input(input)
+	call, err := NewCall("call").Loader(loader).Task(name).Input(input).Done()
+	if err != nil {
+		return nil, err
+	}
 	return call.Execute(ctx, orchestrator.NewInput(nil))
 }
 
 // TraceFlow behaves like CallFlow but also enables tracing.
-func TraceFlow(ctx context.Context, loader, name string, input map[string]any) orchestrator.Event {
-	call := NewCall("call").Loader(loader).Task(name).Input(input)
+func TraceFlow(ctx context.Context, loader, name string, input map[string]any) (orchestrator.Event, error) {
+	call, err := NewCall("call").Loader(loader).Task(name).Input(input).Done()
+	if err != nil {
+		return orchestrator.Event{}, err
+	}
+
 	event := orchestrator.TraceTask(ctx, call, orchestrator.NewInput(nil))
 
 	// To be intuitive, only expose the flow's single event.
@@ -137,7 +165,7 @@ func TraceFlow(ctx context.Context, loader, name string, input map[string]any) o
 	//  ^       ^
 	// event   .Events[0]
 	//
-	return event.Events[0]
+	return event.Events[0], nil
 }
 
 type Loader interface {
