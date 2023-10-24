@@ -3,7 +3,6 @@ package orchestrator
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
@@ -17,7 +16,7 @@ var traceEncoder = structool.New().TagName("json").EncodeHook(
 )
 
 // Event is the individual component of a trace. It represents a single
-// leaf task that is traced.
+// task that is being traced.
 type Event struct {
 	When time.Time `json:"when"`
 	// Since the previous event in the trace.
@@ -86,6 +85,23 @@ func NewTrace(name string) Trace {
 	}
 }
 
+// TraceTask traces the execution of the task with the given input, and
+// reports the tracing result.
+func TraceTask(ctx context.Context, task Task, input Input) Event {
+	tr := NewTrace("root")
+	ctx = ContextWithTrace(ctx, tr)
+
+	_, _ = tr.Wrap(task).Execute(ctx, input)
+
+	// To be intuitive, only expose the task's single event.
+	//
+	// root -> task
+	//  ^       ^
+	// tr      .Events()[0]
+	//
+	return tr.Events()[0]
+}
+
 type trace struct {
 	name  string
 	start time.Time
@@ -109,7 +125,6 @@ func (tr *trace) Wrap(task Task) Task {
 
 func (tr *trace) AddEvent(name string, output map[string]any, err error) {
 	when := time.Now()
-	fmt.Printf("trace.name: %v, event.name: %v, child.trace: %#v\n", tr.name, name, tr.children[name])
 
 	tr.mu.Lock()
 	var events []Event
@@ -154,7 +169,6 @@ type traceTask struct {
 func (t traceTask) Execute(ctx context.Context, input Input) (Output, error) {
 	trace := TraceFromContext(ctx)
 	output, err := t.Task.Execute(ctx, input)
-	//fmt.Printf("trace: %#v, output: %v, err: %v\n", trace, output, err)
 	trace.AddEvent(t.Task.Name(), output, err)
 	return output, err
 }
