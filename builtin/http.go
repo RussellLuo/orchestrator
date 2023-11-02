@@ -76,7 +76,7 @@ type HTTP struct {
 
 	Input struct {
 		Encoding string                                 `json:"encoding"`
-		Method   string                                 `json:"method"`
+		Method   orchestrator.Expr[string]              `json:"method"`
 		URI      orchestrator.Expr[string]              `json:"uri"`
 		Header   orchestrator.Expr[map[string][]string] `json:"header"`
 		Body     orchestrator.Expr[map[string]any]      `json:"body"`
@@ -128,7 +128,7 @@ func (h *HTTP) getEncodingHeader() map[string][]string {
 }
 
 func (h *HTTP) Request(method, uri string) *HTTP {
-	h.Input.Method = method
+	h.Input.Method = orchestrator.Expr[string]{Expr: method}
 	h.Input.URI = orchestrator.Expr[string]{Expr: uri}
 	return h
 }
@@ -176,7 +176,7 @@ func (h *HTTP) String() string {
 		h.def.Type,
 		h.def.Name,
 		h.def.Timeout,
-		h.Input.Method,
+		h.Input.Method.Expr,
 		h.Input.URI.Expr,
 		h.Input.Header.Expr,
 		h.Input.Body.Expr,
@@ -184,6 +184,9 @@ func (h *HTTP) String() string {
 }
 
 func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
+	if err := h.Input.Method.Evaluate(input); err != nil {
+		return nil, err
+	}
 	if err := h.Input.URI.Evaluate(input); err != nil {
 		return nil, err
 	}
@@ -203,7 +206,7 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		body = out
 	}
 
-	req, err := http.NewRequest(h.Input.Method, h.Input.URI.Value, body)
+	req, err := http.NewRequest(h.Input.Method.Value, h.Input.URI.Value, body)
 	if err != nil {
 		return nil, err
 	}
