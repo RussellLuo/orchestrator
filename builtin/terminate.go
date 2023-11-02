@@ -28,7 +28,7 @@ func MustRegisterTerminate(r *orchestrator.Registry) {
 	})
 }
 
-// Terminate is a leaf task that can terminate a series of tasks with a given output.
+// Terminate is a leaf task that is used to terminate the execution of a flow and return an output.
 type Terminate struct {
 	def *orchestrator.TaskDefinition
 

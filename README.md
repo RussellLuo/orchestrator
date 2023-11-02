@@ -15,6 +15,7 @@ Built-in tasks:
 
 - [Decision](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Decision)
 - [Terminate](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Terminate)
+- [Raise](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Raise)
 - [Loop](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Loop)
 - [Iterate](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Iterate)
 - [HTTP](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#HTTP)

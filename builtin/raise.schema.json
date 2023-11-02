@@ -1,0 +1,16 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "error"
+    ],
+    "properties": {
+      "error": {
+        "type": "string",
+        "description": "The error message."
+      }
+    }
+  },
+  "output": {
+  }
+}
