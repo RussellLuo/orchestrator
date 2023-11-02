@@ -8,13 +8,16 @@
     "properties": {
       "method": {
         "type": "string",
+        "description": "The HTTP request method.",
         "enum": ["POST", "GET", "PUT", "PATCH", "DELETE"]
       },
       "uri": {
-        "type": "string"
+        "type": "string",
+        "description": "The HTTP request URI."
       },
       "header": {
         "type": "object",
+        "description": "The HTTP request headers.",
         "patternProperties": {
           "^.*$": {
             "type": "array",
@@ -26,6 +29,7 @@
       },
       "body": {
         "type": "object",
+        "description": "The HTTP request body.",
         "patternProperties": {
           "^.*$": {}
         }

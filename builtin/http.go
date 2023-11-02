@@ -46,7 +46,7 @@ type Codec interface {
 
 func NewCodec(encoding string) (Codec, error) {
 	switch encoding {
-	case "", "json":
+	case "json":
 		return JSON{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported encoding %q", encoding)
@@ -101,6 +101,9 @@ func (h *HTTP) Timeout(timeout time.Duration) *HTTP {
 }
 
 func (h *HTTP) Encoding(encoding string) *HTTP {
+	if encoding == "" {
+		encoding = "json"
+	}
 	h.Input.Encoding = encoding
 
 	codec, err := NewCodec(encoding)
@@ -110,6 +113,18 @@ func (h *HTTP) Encoding(encoding string) *HTTP {
 	h.codec = codec
 
 	return h
+}
+
+func (h *HTTP) getEncodingHeader() map[string][]string {
+	switch h.Input.Encoding {
+	case "json":
+		return map[string][]string{
+			"Content-Type": {"application/json"},
+			"Accept":       {"application/json"},
+		}
+	default:
+		return nil
+	}
 }
 
 func (h *HTTP) Request(method, uri string) *HTTP {
@@ -193,6 +208,11 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		return nil, err
 	}
 	for k, v := range h.Input.Header.Value {
+		for _, vv := range v {
+			req.Header.Add(k, vv)
+		}
+	}
+	for k, v := range h.getEncodingHeader() {
 		for _, vv := range v {
 			req.Header.Add(k, vv)
 		}
