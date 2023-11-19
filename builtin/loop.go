@@ -90,9 +90,6 @@ func (l *Loop) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		return nil, fmt.Errorf("bad iterator: %s", iterName)
 	}
 
-	iter.Start()
-	defer iter.Stop()
-
 	output := make(orchestrator.Output)
 
 	var i int
@@ -118,33 +115,58 @@ func (l *Loop) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 }
 
 type Iterator struct {
-	f      func(context.Context, chan<- Result)
-	cancel func()
-
-	c chan Result
+	ctx context.Context
+	f   func(*IteratorSender)
+	c   chan Result
 }
 
-func NewIterator(f func(context.Context, chan<- Result)) *Iterator {
+func NewIterator(ctx context.Context, f func(sender *IteratorSender)) *Iterator {
 	return &Iterator{
-		f: f,
-		c: make(chan Result),
+		ctx: ctx,
+		f:   f,
+		c:   make(chan Result),
 	}
 }
 
-func (i *Iterator) Start() {
-	ctx, cancel := context.WithCancel(context.Background())
-	i.cancel = cancel
-	go i.f(ctx, i.c)
-}
-
-func (i *Iterator) Stop() {
-	i.cancel()
-}
-
 func (i *Iterator) Next() <-chan Result {
+	sender := NewIteratorSender(i.ctx, i.c)
+	go i.f(sender)
+
 	return i.c
 }
 
 func (i *Iterator) String() string {
 	return "<Iterator>"
+}
+
+// IteratorSender is a helper for sending data to an iterator.
+type IteratorSender struct {
+	ctx context.Context
+	ch  chan<- Result
+}
+
+func NewIteratorSender(ctx context.Context, ch chan<- Result) *IteratorSender {
+	return &IteratorSender{
+		ctx: ctx,
+		ch:  ch,
+	}
+}
+
+// Send sends data to the internal channel. If the internal context is
+// done (cancelled or timed out), it will close ch and mark the boolean
+// flag (whether to continue sending) as false.
+func (s *IteratorSender) Send(output orchestrator.Output, err error) (continue_ bool) {
+	select {
+	case s.ch <- Result{Output: output, Err: err}:
+		return true
+	case <-s.ctx.Done():
+		// End the iteration.
+		s.End()
+		return false
+	}
+}
+
+// End ends the iteration by closing the internal channel.
+func (s *IteratorSender) End() {
+	close(s.ch)
 }

@@ -36,7 +36,7 @@ func MustRegisterIterate(r *orchestrator.Registry) {
 }
 
 // Iterate is a leaf task that is used to make an iterator from a slice/map/range.
-// Note that an Iterate task is always used with a Loop task.
+// Note that an Iterate task is always used along with a Loop task.
 type Iterate struct {
 	def *orchestrator.TaskDefinition
 
@@ -121,21 +121,12 @@ func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orches
 		return nil, fmt.Errorf(`bad iterate type: must be one of [%q, %q, %q]`, IterateTypeList, IterateTypeMap, IterateTypeRange)
 	}
 
-	iterator := NewIterator(func(ctx context.Context, ch chan<- Result) {
-		send := func(output orchestrator.Output, err error) (continue_ bool) {
-			select {
-			case ch <- Result{Output: output, Err: err}:
-				return true
-			case <-ctx.Done():
-				return false
-			}
-		}
-
+	iterator := NewIterator(ctx, func(sender *IteratorSender) {
 		switch i.Input.Type {
 		case IterateTypeList:
 			vList := value.([]any)
 			for _, v := range vList {
-				if continue_ := send(orchestrator.Output{"value": v}, nil); !continue_ {
+				if continue_ := sender.Send(orchestrator.Output{"value": v}, nil); !continue_ {
 					return
 				}
 			}
@@ -151,7 +142,7 @@ func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orches
 			sort.Strings(keys)
 
 			for _, k := range keys {
-				if continue_ := send(orchestrator.Output{"key": k, "value": vMap[k]}, nil); !continue_ {
+				if continue_ := sender.Send(orchestrator.Output{"key": k, "value": vMap[k]}, nil); !continue_ {
 					return
 				}
 			}
@@ -166,14 +157,14 @@ func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orches
 				start, stop, step = vRange[0], vRange[1], vRange[2]
 			}
 			for n := start; n < stop; n += step {
-				if continue_ := send(orchestrator.Output{"value": n}, nil); !continue_ {
+				if continue_ := sender.Send(orchestrator.Output{"value": n}, nil); !continue_ {
 					return
 				}
 			}
 		}
 
 		// End the iteration.
-		close(ch)
+		sender.End()
 	})
 	return orchestrator.Output{"iterator": iterator}, nil
 }
