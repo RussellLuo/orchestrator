@@ -122,6 +122,8 @@ func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orches
 	}
 
 	iterator := NewIterator(ctx, func(sender *IteratorSender) {
+		defer sender.End() // End the iteration
+
 		switch i.Input.Type {
 		case IterateTypeList:
 			vList := value.([]any)
@@ -162,9 +164,6 @@ func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orches
 				}
 			}
 		}
-
-		// End the iteration.
-		sender.End()
 	})
 	return orchestrator.Output{"iterator": iterator}, nil
 }

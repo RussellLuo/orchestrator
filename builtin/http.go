@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"time"
 
@@ -80,6 +81,8 @@ type HTTP struct {
 		URI      orchestrator.Expr[string]              `json:"uri"`
 		Header   orchestrator.Expr[map[string][]string] `json:"header"`
 		Body     orchestrator.Expr[map[string]any]      `json:"body"`
+		// A filter expression for extracting fields from a server-sent event.
+		SSEFilter string `json:"sse_filter"`
 	}
 }
 
@@ -206,7 +209,7 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		body = out
 	}
 
-	req, err := http.NewRequest(h.Input.Method.Value, h.Input.URI.Value, body)
+	req, err := http.NewRequestWithContext(ctx, h.Input.Method.Value, h.Input.URI.Value, body)
 	if err != nil {
 		return nil, err
 	}
@@ -225,11 +228,73 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	var respBody map[string]any
-	if err := h.codec.Decode(resp.Body, &respBody); err != nil {
+	respContentType := resp.Header.Get("Content-Type")
+	mediatype, _, err := mime.ParseMediaType(respContentType)
+	if err != nil {
+		resp.Body.Close()
 		return nil, err
+	}
+
+	var respBody any
+
+	switch mediatype {
+	case "text/event-stream": // Sever-Sent Events
+		respBody = NewIterator(ctx, func(sender *IteratorSender) {
+			defer sender.End() // End the iteration
+
+			defer resp.Body.Close()
+			reader := NewEventStreamReader(resp.Body, 1<<16)
+
+			for {
+				event, err := reader.ReadEvent()
+				if err != nil {
+					if err == io.EOF {
+						// Reach the end of the response payload.
+						sender.Send(orchestrator.Output{}, nil)
+						return
+					}
+
+					sender.Send(nil, err)
+					return
+				}
+
+				// Send the event if it has something useful.
+				if len(event.Data) > 0 {
+					data := string(event.Data)
+					if h.Input.SSEFilter != "" {
+						evaluator := orchestrator.NewEvaluatorWithData(map[string]any{"event": data})
+						value, err := evaluator.Evaluate(h.Input.SSEFilter)
+						if err != nil {
+							sender.Send(nil, fmt.Errorf("failed to evaluate '%s': %v", h.Input.SSEFilter, err))
+							return
+						}
+						// We assume that the event data is always a string.
+						data = fmt.Sprintf("%v", value)
+					}
+					// For simplicity, currently we only handle data-only sever-sent events.
+					if continue_ := sender.Send(orchestrator.Output{"event": data}, nil); !continue_ {
+						return
+					}
+				}
+			}
+		})
+
+	case "application/json": // JSON
+		defer resp.Body.Close()
+		var m map[string]any
+		if err := h.codec.Decode(resp.Body, &m); err != nil {
+			return nil, err
+		}
+		respBody = m
+
+	default: // Other content
+		defer resp.Body.Close()
+		b, err := io.ReadAll(resp.Body)
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+		respBody = string(b)
 	}
 
 	return orchestrator.Output{

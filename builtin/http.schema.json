@@ -33,6 +33,10 @@
         "patternProperties": {
           "^.*$": {}
         }
+      },
+      "sse_filter": {
+        "type": "string",
+        "description": "A filter expression for extracting fields from a server-sent event."
       }
     }
   },

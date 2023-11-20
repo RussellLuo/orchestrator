@@ -47,6 +47,13 @@ func NewEvaluator() *Evaluator {
 	}
 }
 
+// TODO: Merge NewEvaluator and NewEvaluatorWithData.
+func NewEvaluatorWithData(data map[string]any) *Evaluator {
+	return &Evaluator{
+		data: data,
+	}
+}
+
 func (e *Evaluator) Add(taskName string, value map[string]any) {
 	e.data[taskName] = value
 }

@@ -152,16 +152,14 @@ func NewIteratorSender(ctx context.Context, ch chan<- Result) *IteratorSender {
 	}
 }
 
-// Send sends data to the internal channel. If the internal context is
-// done (cancelled or timed out), it will close ch and mark the boolean
-// flag (whether to continue sending) as false.
+// Send sends data to the internal channel. If the internal context is done
+// (cancelled or timed out), it will mark the continue flag (whether to continue
+// sending) as false.
 func (s *IteratorSender) Send(output orchestrator.Output, err error) (continue_ bool) {
 	select {
 	case s.ch <- Result{Output: output, Err: err}:
 		return true
 	case <-s.ctx.Done():
-		// End the iteration.
-		s.End()
 		return false
 	}
 }
