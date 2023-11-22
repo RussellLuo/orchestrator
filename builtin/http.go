@@ -240,7 +240,7 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 
 	switch mediatype {
 	case "text/event-stream": // Sever-Sent Events
-		respBody = NewIterator(ctx, func(sender *IteratorSender) {
+		iterator := orchestrator.NewIterator(ctx, func(sender *orchestrator.IteratorSender) {
 			defer sender.End() // End the iteration
 
 			defer resp.Body.Close()
@@ -251,7 +251,6 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 				if err != nil {
 					if err == io.EOF {
 						// Reach the end of the response payload.
-						sender.Send(orchestrator.Output{}, nil)
 						return
 					}
 
@@ -263,7 +262,7 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 				if len(event.Data) > 0 {
 					data := string(event.Data)
 					if h.Input.SSEFilter != "" {
-						evaluator := orchestrator.NewEvaluatorWithData(map[string]any{"event": data})
+						evaluator := orchestrator.NewEvaluatorWithData(map[string]any{"data": data})
 						value, err := evaluator.Evaluate(h.Input.SSEFilter)
 						if err != nil {
 							sender.Send(nil, fmt.Errorf("failed to evaluate '%s': %v", h.Input.SSEFilter, err))
@@ -273,12 +272,13 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 						data = fmt.Sprintf("%v", value)
 					}
 					// For simplicity, currently we only handle data-only sever-sent events.
-					if continue_ := sender.Send(orchestrator.Output{"event": data}, nil); !continue_ {
+					if continue_ := sender.Send(orchestrator.Output{"data": data}, nil); !continue_ {
 						return
 					}
 				}
 			}
 		})
+		return orchestrator.Output{"iterator": iterator}, nil
 
 	case "application/json": // JSON
 		defer resp.Body.Close()

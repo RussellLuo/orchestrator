@@ -30,12 +30,6 @@ func MustRegisterSerial(r *orchestrator.Registry) {
 	})
 }
 
-type Result struct {
-	Name   string
-	Output orchestrator.Output
-	Err    error
-}
-
 func executeWithTimeout(ctx context.Context, input orchestrator.Input, timeout time.Duration, f func(context.Context, orchestrator.Input) (orchestrator.Output, error)) (orchestrator.Output, error) {
 	if timeout <= 0 {
 		// Execute f directly.
@@ -45,10 +39,10 @@ func executeWithTimeout(ctx context.Context, input orchestrator.Input, timeout t
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	resultChan := make(chan Result, 1)
+	resultChan := make(chan orchestrator.Result, 1)
 	go func() {
 		output, err := f(ctx, input)
-		resultChan <- Result{Output: output, Err: err}
+		resultChan <- orchestrator.Result{Output: output, Err: err}
 	}()
 
 	select {

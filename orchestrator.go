@@ -38,6 +38,11 @@ func (o Output) IsTerminated() bool {
 	return ok && terminated
 }
 
+func (o Output) Iterator() (iterator *Iterator, ok bool) {
+	iterator, ok = o["iterator"].(*Iterator)
+	return
+}
+
 type Schema struct {
 	Input  map[string]any `json:"input"`
 	Output map[string]any `json:"output"`

@@ -121,7 +121,7 @@ func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orches
 		return nil, fmt.Errorf(`bad iterate type: must be one of [%q, %q, %q]`, IterateTypeList, IterateTypeMap, IterateTypeRange)
 	}
 
-	iterator := NewIterator(ctx, func(sender *IteratorSender) {
+	iterator := orchestrator.NewIterator(ctx, func(sender *orchestrator.IteratorSender) {
 		defer sender.End() // End the iteration
 
 		switch i.Input.Type {
