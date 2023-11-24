@@ -2,12 +2,12 @@ package orchestrator_test
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/RussellLuo/orchestrator"
 	"github.com/RussellLuo/orchestrator/builtin"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestConstructDecoder(t *testing.T) {
@@ -151,6 +151,16 @@ func TestEvaluate(t *testing.T) {
 		"key1": "value",
 		"key2": 0,
 		"key3": true,
+		"key4": []any{
+			1,
+			2,
+			3,
+		},
+		"key5": map[string]any{
+			"a": "v1",
+			"b": "v2",
+			"c": "v3",
+		},
 	})
 
 	tests := []struct {
@@ -162,6 +172,24 @@ func TestEvaluate(t *testing.T) {
 			name:    "string",
 			in:      "${input.key1}",
 			wantOut: "value",
+		},
+		{
+			name: "list comprehension",
+			in:   "${[x*2 for x in input.key4]}",
+			wantOut: []any{
+				2,
+				4,
+				6,
+			},
+		},
+		{
+			name: "dictionary comprehension",
+			in:   "${{k: v.upper() for k, v in input.key5.items()}}",
+			wantOut: map[string]any{
+				"a": "V1",
+				"b": "V2",
+				"c": "V3",
+			},
 		},
 		{
 			name:    "array",
@@ -182,12 +210,13 @@ func TestEvaluate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out, err := orchestrator.Evaluate(tt.in, input.Evaluate)
+			got, err := orchestrator.Evaluate(tt.in, input.Evaluate)
 			if err != nil {
 				t.Fatalf("Err: %v", err)
 			}
-			if !reflect.DeepEqual(out, tt.wantOut) {
-				t.Fatalf("Out: Got (%#v) != Want (%#v)", out, tt.wantOut)
+			if !cmp.Equal(got, tt.wantOut) {
+				diff := cmp.Diff(got, tt.wantOut)
+				t.Errorf("Want - Got: %s", diff)
 			}
 		})
 	}

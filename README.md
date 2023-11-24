@@ -41,16 +41,34 @@ For example, a flow is supplied with an input by the client/caller when a new ex
 
 Currently supported expression dialects:
 
-- JSONPath ([spec][3] and [implementation][4])
+- [Starlark][3]
 
     ```
-    ${tool.status}  // HTTP status code (e.g. 200) - from an HTTP task named `tool`.
+    ${input.value}  // Value from the input.
+    ${tool.status == 200}  // Whether the status code (from an HTTP task `tool`) is 200
+    ${len(tool.body.entities)}  // Length of the response entities (from an HTTP task `tool`)
+    ${[s*2 for s in input.scores]}  // List comprehension
+    ${{k: v.upper() for k, v in input.properties.items()}}  // Dictionary comprehension
     ```
 
-- [Expr][5]
+- [Expr][4]
 
     ```
-    #{len(tool.body.entities)}  // Length of returned entities (e.g. 10) - from an HTTP task named `tool`.
+    #{input.value}  // Value from the input.
+    #{tool.status == 200}  // Whether the status code (from an HTTP task `tool`) is 200
+    #{len(tool.body.entities)}  // Length of the response entities (from an HTTP task `tool`)
+    //#{[s*2 for s in input.scores]}  // UNSUPPORTED
+    //#{{k: v.upper() for k, v in input.properties.items()}}  // UNSUPPORTED
+    ```
+
+- JSONPath ([spec][5] and [implementation][6])
+
+    ```
+    @{input.value}  // Value from the input.
+    //@{tool.status == 200}  // UNSUPPORTED
+    //@{len(tool.body.entities)}  // UNSUPPORTED
+    //@{[s*2 for s in input.scores]}  // UNSUPPORTED
+    //@{{k: v.upper() for k, v in input.properties.items()}}  // UNSUPPORTED
     ```
 
 
@@ -66,6 +84,7 @@ Checkout the [Godoc][2].
 
 [1]: https://github.com/Netflix/conductor
 [2]: https://pkg.go.dev/github.com/RussellLuo/orchestrator
-[3]: https://goessner.net/articles/JsonPath/
-[4]: https://github.com/PaesslerAG/jsonpath
-[5]: https://expr.medv.io/
+[3]: https://github.com/google/starlark-go/blob/master/doc/spec.md#expressions
+[4]: https://expr.medv.io/
+[5]: https://goessner.net/articles/JsonPath/
+[6]: https://github.com/PaesslerAG/jsonpath

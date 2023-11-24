@@ -11,20 +11,39 @@ import (
 	"github.com/PaesslerAG/jsonpath"
 	"github.com/RussellLuo/structool"
 	"github.com/antonmedv/expr"
+	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
+)
+
+const (
+	// Regular expressions are not the best tool for parsing nested structures like balanced
+	// braces. Here we only handle one level of nested curly braces. In the future, we might
+	// use a proper parser if we encounter more complex cases (e.g. deeper nesting levels).
+	//
+	// Examples:
+	//
+	//   input.value
+	//   {k: v for k, v in d.items()}
+	//
+	reInnerVar = `(?:[^{}]+|\s*{[^{}]+}\s*)`
 )
 
 var (
-	// JSONPath expression (https://github.com/PaesslerAG/jsonpath):
+	// Starlark expression (https://github.com/google/starlark-go/blob/master/doc/spec.md#expressions):
 	//
 	//   ${...}
 	//
 	// Expr expression (https://github.com/antonmedv/expr):
 	//
 	//   #{...}
-	reExpr = regexp.MustCompile(`(?:\$|#){[^}]+}`)
+	//
+	// JSONPath expression (https://github.com/PaesslerAG/jsonpath):
+	//
+	//   @{...}
+	reExpr = regexp.MustCompile(`(?:\$|#|@){` + reInnerVar + `}`)
 
 	// reVar is like reExpr but actually extracts the leading character and the variable.
-	reVar = regexp.MustCompile(`^(\$|#){([^}]+)}$`)
+	reVar = regexp.MustCompile(`^(\$|#|@){(` + reInnerVar + `)}$`)
 
 	DefaultCodec = structool.New().TagName("json").DecodeHook(
 		structool.DecodeStringToTime(time.RFC3339),
@@ -112,15 +131,42 @@ func (e *Evaluator) evaluate(s string) (any, error) {
 		return nil, fmt.Errorf("bad expression: %s", s)
 	}
 
-	dialect, variable := matches[1], matches[2]
+	dialect, variable := matches[1], strings.TrimSpace(matches[2])
 	switch dialect {
-	case "$": // JSONPath
-		return e.evaluateJSONPathVar(variable)
+	case "$": // Starlark
+		return e.evaluateStarlarkVar(variable)
 	case "#": // Expr
 		return e.evaluateExprVar(variable)
+	case "@": // JSONPath
+		return e.evaluateJSONPathVar(variable)
 	default:
 		return nil, fmt.Errorf("bad expression: %s", s)
 	}
+}
+
+func (e *Evaluator) evaluateStarlarkVar(s string) (any, error) {
+	env := e.data
+
+	expr, err := syntax.ParseExpr("", s, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	envDict := make(starlark.StringDict, len(env))
+	for k, v := range env {
+		sv, err := interfaceAsStarlarkValue(v)
+		if err != nil {
+			return nil, err
+		}
+		envDict[k] = sv
+	}
+
+	value, err := starlark.EvalExprOptions(&syntax.FileOptions{}, &starlark.Thread{}, expr, envDict)
+	if err != nil {
+		return nil, err
+	}
+
+	return starlarkValueAsInterface(value)
 }
 
 func (e *Evaluator) evaluateJSONPathVar(s string) (any, error) {
