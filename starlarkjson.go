@@ -6,7 +6,7 @@
 // to/from JSON strings. The most recent IETF standard for JSON is
 // https://www.ietf.org/rfc/rfc7159.txt.
 
-// The following code is mainly borrow from https://github.com/google/starlark-go/blob/master/lib/json/json.go.
+// The following code is mainly borrow from https://github.com/google/starlark-go/blob/90ade8b19d09805d1b91a9687198869add6dfaa1/lib/json/json.go.
 
 package orchestrator
 
@@ -431,7 +431,7 @@ func decode(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, k
 
 		case '{':
 			// object
-			dict := NewMyDict(0)
+			dict := NewMyDict(0) // Modified by RussellLuo.
 
 			i++ // '{'
 			b = next()
@@ -447,7 +447,7 @@ func decode(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, k
 					}
 					i++ // ':'
 					value := parse()
-					dict.SetKey(key, value) // can't fail
+					_ = dict.SetKey(key, value) // can't fail
 					b = next()
 					if b != ',' {
 						if b != '}' {
