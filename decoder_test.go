@@ -161,6 +161,7 @@ func TestEvaluate(t *testing.T) {
 			"b": "v2",
 			"c": "v3",
 		},
+		"key6": new(orchestrator.Iterator),
 	})
 
 	tests := []struct {
@@ -190,6 +191,16 @@ func TestEvaluate(t *testing.T) {
 				"b": "V2",
 				"c": "V3",
 			},
+		},
+		{
+			name:    "is iterator",
+			in:      "${isiterator(input.key6)}",
+			wantOut: true,
+		},
+		{
+			name:    "get iterator",
+			in:      "${input.key6}",
+			wantOut: new(orchestrator.Iterator),
 		},
 		{
 			name:    "array",

@@ -14,19 +14,19 @@ type Result struct {
 // Iterator represents a iterable object that is capable of returning its
 // values one at a time, permitting it to be iterated over in a for-loop.
 type Iterator struct {
-	c chan Result
+	ch chan Result
 }
 
 func NewIterator(ctx context.Context, f func(sender *IteratorSender)) *Iterator {
-	c := make(chan Result)
-	sender := NewIteratorSender(ctx, c)
+	ch := make(chan Result)
+	sender := NewIteratorSender(ctx, ch)
 	go f(sender)
 
-	return &Iterator{c: c}
+	return &Iterator{ch: ch}
 }
 
 func (i *Iterator) Next() <-chan Result {
-	return i.c
+	return i.ch
 }
 
 func (i *Iterator) String() string {
@@ -35,6 +35,11 @@ func (i *Iterator) String() string {
 
 func (i *Iterator) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.String())
+}
+
+// Equal implements the custom equality method of github.com/google/go-cmp.
+func (i *Iterator) Equal(o *Iterator) bool {
+	return i.String() == o.String()
 }
 
 // IteratorSender is a helper for sending data to an iterator.

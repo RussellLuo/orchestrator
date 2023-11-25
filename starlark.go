@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 )
 
 type MyDict struct {
@@ -27,6 +28,84 @@ func (md *MyDict) Attr(name string) (starlark.Value, error) {
 // SetField make MyDict keys can be written by a dot expression (x.f = y).
 func (md *MyDict) SetField(name string, val starlark.Value) error {
 	return md.Dict.SetKey(starlark.String(name), val)
+}
+
+// starlarkIterator implements starlark.Iterator and serves as a Starlark
+// representation of Orchestrator's Iterator.
+type starlarkIterator struct {
+	iter *Iterator
+}
+
+func newStarlarkIterator(iter *Iterator) *starlarkIterator {
+	return &starlarkIterator{iter: iter}
+}
+
+func (si *starlarkIterator) String() string        { return "orchestrator.Iterator" }
+func (si *starlarkIterator) Type() string          { return si.String() }
+func (si *starlarkIterator) Freeze()               {} // immutable
+func (si *starlarkIterator) Truth() starlark.Bool  { return starlark.True }
+func (si *starlarkIterator) Hash() (uint32, error) { return 0, fmt.Errorf("unhashable: %s", si.Type()) }
+
+func (si *starlarkIterator) Next(p *starlark.Value) bool {
+	v, ok := <-si.iter.Next()
+	if !ok {
+		// The iterator is exhausted.
+		return false
+	}
+
+	m := map[string]any{
+		"name":   v.Name,
+		"output": v.Output,
+		"err":    v.Err.Error(),
+	}
+	sv, err := interfaceAsStarlarkValue(m)
+	if err != nil {
+		panic(err)
+		//return false
+	}
+
+	*p = sv
+	return true
+}
+
+func (si *starlarkIterator) Done() {}
+
+func (si *starlarkIterator) Iterator() *Iterator {
+	return si.iter
+}
+
+func StarlarkEvalExpr(s string, env map[string]any) (any, error) {
+	expr, err := syntax.ParseExpr("", s, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	envDict := make(starlark.StringDict, len(env))
+	for k, v := range env {
+		sv, err := interfaceAsStarlarkValue(v)
+		if err != nil {
+			return nil, err
+		}
+		envDict[k] = sv
+	}
+	// Add a pre-declared function `isiterator`.
+	envDict["isiterator"] = starlark.NewBuiltin("isiterator", isIterator)
+
+	value, err := starlark.EvalExprOptions(&syntax.FileOptions{}, &starlark.Thread{}, expr, envDict)
+	if err != nil {
+		return nil, err
+	}
+
+	return starlarkValueAsInterface(value)
+}
+
+func isIterator(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var v starlark.Value
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, "v", &v); err != nil {
+		return nil, err
+	}
+	_, ok := v.(*starlarkIterator)
+	return starlark.Bool(ok), nil
 }
 
 var ErrStarlarkConversion = errors.New("failed to convert Starlark data type")
@@ -73,6 +152,9 @@ func starlarkValueAsInterface(value starlark.Value) (any, error) {
 	case *MyDict:
 		return starlarkValueAsMap(v.Dict)
 
+	case *starlarkIterator:
+		return v.Iterator(), nil
+
 	default:
 		return nil, fmt.Errorf("%w: unsupported type %T", ErrStarlarkConversion, value)
 	}
@@ -114,6 +196,9 @@ func interfaceAsStarlarkValue(value any) (starlark.Value, error) {
 
 	case map[string]any:
 		return mapAsStarlarkValue(v)
+
+	case *Iterator:
+		return newStarlarkIterator(v), nil
 
 	default:
 		var m map[string]any

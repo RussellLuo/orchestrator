@@ -53,6 +53,9 @@ Currently supported expression dialects:
 
 - [Expr][4]
 
+    <details>
+      <summary> (- expand -) </summary>
+
     ```
     #{input.value}  // Value from the input.
     #{tool.status == 200}  // Whether the status code (from an HTTP task `tool`) is 200
@@ -61,7 +64,12 @@ Currently supported expression dialects:
     //#{{k: v.upper() for k, v in input.properties.items()}}  // UNSUPPORTED
     ```
 
+    </details>
+
 - JSONPath ([spec][5] and [implementation][6])
+
+    <details>
+      <summary> (- expand -) </summary>
 
     ```
     @{input.value}  // Value from the input.
@@ -70,6 +78,8 @@ Currently supported expression dialects:
     //@{[s*2 for s in input.scores]}  // UNSUPPORTED
     //@{{k: v.upper() for k, v in input.properties.items()}}  // UNSUPPORTED
     ```
+
+    </details>
 
 
 ## Documentation

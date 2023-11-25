@@ -11,8 +11,6 @@ import (
 	"github.com/PaesslerAG/jsonpath"
 	"github.com/RussellLuo/structool"
 	"github.com/antonmedv/expr"
-	"go.starlark.net/starlark"
-	"go.starlark.net/syntax"
 )
 
 const (
@@ -145,28 +143,7 @@ func (e *Evaluator) evaluate(s string) (any, error) {
 }
 
 func (e *Evaluator) evaluateStarlarkVar(s string) (any, error) {
-	env := e.data
-
-	expr, err := syntax.ParseExpr("", s, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	envDict := make(starlark.StringDict, len(env))
-	for k, v := range env {
-		sv, err := interfaceAsStarlarkValue(v)
-		if err != nil {
-			return nil, err
-		}
-		envDict[k] = sv
-	}
-
-	value, err := starlark.EvalExprOptions(&syntax.FileOptions{}, &starlark.Thread{}, expr, envDict)
-	if err != nil {
-		return nil, err
-	}
-
-	return starlarkValueAsInterface(value)
+	return StarlarkEvalExpr(s, e.data)
 }
 
 func (e *Evaluator) evaluateJSONPathVar(s string) (any, error) {
