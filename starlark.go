@@ -23,7 +23,14 @@ func (md *MyDict) Attr(name string) (starlark.Value, error) {
 	if v, found, _ := md.Dict.Get(starlark.String(name)); found {
 		return v, nil
 	}
-	return md.Dict.Attr(name)
+
+	// NOTE: Here we do not check the error since Dict.Attr always returns nil error.
+	if v, _ := md.Dict.Attr(name); v != nil {
+		return v, nil
+	}
+
+	// Return None for non-existent fields.
+	return starlark.None, nil
 }
 
 // SetField make MyDict keys can be written by a dot expression (x.f = y).
@@ -99,6 +106,32 @@ func StarlarkEvalExpr(s string, env map[string]any) (any, error) {
 		return nil, err
 	}
 
+	return starlarkValueAsInterface(value)
+}
+
+func StarlarkCallFunc(s string, env map[string]any) (any, error) {
+	thread := &starlark.Thread{}
+	globals, err := starlark.ExecFile(thread, "", s, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieve a module global.
+	f, ok := globals["_"]
+	if !ok {
+		return nil, fmt.Errorf(`found no func named "_"`)
+	}
+
+	envValue, err := interfaceAsStarlarkValue(env)
+	if err != nil {
+		return nil, err
+	}
+
+	// Call Starlark function from Go.
+	value, err := starlark.Call(thread, f, starlark.Tuple{envValue}, nil)
+	if err != nil {
+		return nil, err
+	}
 	return starlarkValueAsInterface(value)
 }
 

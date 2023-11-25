@@ -80,6 +80,10 @@ func (e *Evaluator) Get(taskName string) map[string]any {
 	return value
 }
 
+func (e *Evaluator) Env() map[string]any {
+	return e.data
+}
+
 // Evaluate evaluates the expression s.
 func (e *Evaluator) Evaluate(s string) (any, error) {
 	matches := reExpr.FindAllStringSubmatch(s, -1)

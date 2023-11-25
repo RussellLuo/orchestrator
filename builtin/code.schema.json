@@ -1,0 +1,21 @@
+{
+  "input": {
+    "type": "object",
+    "required": [
+      "code"
+    ],
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "The source code of the Starlark function. The signature must be \"def _(env):\", where \"env\" is the environment that contains the input and outputs of all the previously executed tasks."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "description": "The execution result",
+    "properties": {
+      "result": {}
+    }
+  }
+}
