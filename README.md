@@ -43,6 +43,13 @@ Currently supported expression dialects:
 
 - [Starlark][3]
 
+    In addition to Starlark's built-in functions, there are 3 more pre-declared functions:
+    - `isiterator(v)`: Whether the given value v is an Orchestrator Iterator.
+    - `jsonencode(v)`: Encode the given value v to a JSON string ([go.starlark.net/lib/json](https://pkg.go.dev/go.starlark.net/lib/json)).
+    - `jsondecode(v)`: Decode the given JSON string to a value ([go.starlark.net/lib/json](https://pkg.go.dev/go.starlark.net/lib/json)).
+
+    Examples:
+
     ```
     ${input.value}  // Value from the input.
     ${tool.status == 200}  // Whether the status code (from an HTTP task `tool`) is 200
@@ -55,6 +62,8 @@ Currently supported expression dialects:
 
     <details>
       <summary> (- expand -) </summary>
+
+    Examples:
 
     ```
     #{input.value}  // Value from the input.
@@ -70,6 +79,8 @@ Currently supported expression dialects:
 
     <details>
       <summary> (- expand -) </summary>
+
+    Examples:
 
     ```
     @{input.value}  // Value from the input.

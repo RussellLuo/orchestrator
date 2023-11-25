@@ -161,7 +161,8 @@ func TestEvaluate(t *testing.T) {
 			"b": "v2",
 			"c": "v3",
 		},
-		"key6": new(orchestrator.Iterator),
+		"key6": `{"a":"v1","b":"v2","c":"v3"}`,
+		"key7": new(orchestrator.Iterator),
 	})
 
 	tests := []struct {
@@ -193,13 +194,27 @@ func TestEvaluate(t *testing.T) {
 			},
 		},
 		{
+			name:    "json encode",
+			in:      "${jsonencode(input.key5)}",
+			wantOut: `{"a":"v1","b":"v2","c":"v3"}`,
+		},
+		{
+			name: "json decode",
+			in:   `${jsondecode(input.key6)}`,
+			wantOut: map[string]any{
+				"a": "v1",
+				"b": "v2",
+				"c": "v3",
+			},
+		},
+		{
 			name:    "is iterator",
-			in:      "${isiterator(input.key6)}",
+			in:      "${isiterator(input.key7)}",
 			wantOut: true,
 		},
 		{
 			name:    "get iterator",
-			in:      "${input.key6}",
+			in:      "${input.key7}",
 			wantOut: new(orchestrator.Iterator),
 		},
 		{

@@ -23,7 +23,7 @@ const (
 	//   input.value
 	//   {k: v for k, v in d.items()}
 	//
-	reInnerVar = `(?:[^{}]+|\s*{[^{}]+}\s*)`
+	reInnerVar = `(?:[^{}]+|[^{]*{[^{}]+}[^}]*)`
 )
 
 var (

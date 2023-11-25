@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	//"go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
 )
@@ -90,6 +91,8 @@ func StarlarkEvalExpr(s string, env map[string]any) (any, error) {
 	}
 	// Add a pre-declared function `isiterator`.
 	envDict["isiterator"] = starlark.NewBuiltin("isiterator", isIterator)
+	envDict["jsonencode"] = starlark.NewBuiltin("jsonencode", encode)
+	envDict["jsondecode"] = starlark.NewBuiltin("jsondecode", decode)
 
 	value, err := starlark.EvalExprOptions(&syntax.FileOptions{}, &starlark.Thread{}, expr, envDict)
 	if err != nil {

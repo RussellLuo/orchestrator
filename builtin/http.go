@@ -240,7 +240,7 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 
 	switch mediatype {
 	case "text/event-stream": // Sever-Sent Events
-		iterator := orchestrator.NewIterator(ctx, func(sender *orchestrator.IteratorSender) {
+		respBody = orchestrator.NewIterator(ctx, func(sender *orchestrator.IteratorSender) {
 			defer sender.End() // End the iteration
 
 			defer resp.Body.Close()
@@ -278,7 +278,6 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 				}
 			}
 		})
-		return orchestrator.Output{"iterator": iterator}, nil
 
 	case "application/json": // JSON
 		defer resp.Body.Close()
