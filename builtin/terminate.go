@@ -34,6 +34,7 @@ type Terminate struct {
 
 	Input struct {
 		Output orchestrator.Expr[orchestrator.Output] `json:"output"`
+		Error  orchestrator.Expr[string]              `json:"error"`
 	}
 }
 
@@ -51,18 +52,36 @@ func (t *Terminate) Output(output any) *Terminate {
 	return t
 }
 
+func (t *Terminate) Error(err any) *Terminate {
+	t.Input.Error = orchestrator.Expr[string]{Expr: err}
+	return t
+}
+
 func (t *Terminate) Name() string { return t.def.Name }
 
 func (t *Terminate) String() string {
-	return fmt.Sprintf("%s(name:%s, output:%v)", t.def.Type, t.def.Name, t.Input.Output.Expr)
+	return fmt.Sprintf("%s(name:%s, output:%v, error:%v)", t.def.Type, t.def.Name, t.Input.Output.Expr, t.Input.Error.Expr)
 }
 
 func (t *Terminate) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
 	if err := t.Input.Output.Evaluate(input); err != nil {
 		return nil, err
 	}
+	if err := t.Input.Error.Evaluate(input); err != nil {
+		return nil, err
+	}
 
-	output := t.Input.Output.Value
+	// If specified, return an error with the given message.
+	errMessage := t.Input.Error.Value
+	if errMessage != "" {
+		return nil, fmt.Errorf(errMessage)
+	}
+
+	// Otherwise, return a normal output.
+	output := orchestrator.Output{}
+	for k, v := range t.Input.Output.Value {
+		output[k] = v
+	}
 	output.SetTerminated()
 	return output, nil
 }

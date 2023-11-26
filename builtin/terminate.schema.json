@@ -1,15 +1,17 @@
 {
   "input": {
     "type": "object",
-    "required": [
-      "output"
-    ],
     "properties": {
       "output": {
         "type": "object",
+        "description": "The success result.",
         "patternProperties": {
           "^.*$": {}
         }
+      },
+      "error": {
+        "type": "string",
+        "description": "The error message. A non-empty error message will always cause an error regardless of the output value, "
       }
     }
   },

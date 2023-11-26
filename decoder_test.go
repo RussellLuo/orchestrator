@@ -120,7 +120,7 @@ func TestConstructDecoder(t *testing.T) {
 					"output": map[string]any(nil),
 				},
 			},
-			wantTaskInput: "terminate(name:count, output:map[])",
+			wantTaskInput: "terminate(name:count, output:map[], error:<nil>)",
 		},
 	}
 
