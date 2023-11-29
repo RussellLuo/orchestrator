@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"io/fs"
+	"path/filepath"
 	"strings"
 )
 
@@ -32,7 +33,9 @@ func MustCollectFiles(f fs.FS, suffix string, convert func(map[string]any) map[s
 			panic(err)
 		}
 
-		typ := strings.TrimSuffix(path, suffix)
+		base := filepath.Base(path)
+		typ := strings.TrimSuffix(base, suffix)
+
 		value := MustUnmarshalToMap(content)
 		if convert != nil {
 			value = convert(value)

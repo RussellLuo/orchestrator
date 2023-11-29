@@ -31,14 +31,13 @@ func MustRegisterCode(r *orchestrator.Registry) {
 // Code is a leaf task that is used to execute a snippet of Starlark code.
 //
 // Note that the signature of the function must be `def _(env):`, where `env` is the
-// environment that  contains the input and outputs of all the previously executed tasks.
+// environment that contains the input and outputs of all the previously executed tasks.
 //
 // Examples:
 //
-// ```starlark
-// def _(env):
-//     return [x*2 for x in input.values]
-// ```
+//	def _(env):
+//	    return [x*2 for x in input.values]
+//
 type Code struct {
 	def *orchestrator.TaskDefinition
 
