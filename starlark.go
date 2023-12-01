@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	//"go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
@@ -97,6 +98,7 @@ func StarlarkEvalExpr(s string, env map[string]any) (any, error) {
 		envDict[k] = sv
 	}
 	// Add a pre-declared function `isiterator`.
+	envDict["getenv"] = starlark.NewBuiltin("getenv", getEnv)
 	envDict["isiterator"] = starlark.NewBuiltin("isiterator", isIterator)
 	envDict["jsonencode"] = starlark.NewBuiltin("jsonencode", encode)
 	envDict["jsondecode"] = starlark.NewBuiltin("jsondecode", decode)
@@ -135,11 +137,22 @@ func StarlarkCallFunc(s string, env map[string]any) (any, error) {
 	return starlarkValueAsInterface(value)
 }
 
+func getEnv(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var s string
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, "s", &s); err != nil {
+		return nil, err
+	}
+
+	v := os.Getenv(s)
+	return starlark.String(v), nil
+}
+
 func isIterator(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var v starlark.Value
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, "v", &v); err != nil {
 		return nil, err
 	}
+
 	_, ok := v.(*starlarkIterator)
 	return starlark.Bool(ok), nil
 }

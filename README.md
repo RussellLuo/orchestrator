@@ -43,7 +43,8 @@ Currently supported expression dialects:
 
 - [Starlark][3]
 
-    In addition to Starlark's built-in functions, there are 3 more pre-declared functions:
+    In addition to Starlark's built-in functions, there are some more pre-declared functions:
+    - `getenv(key)`: Retrieve the value of the environment variable named by the key.
     - `isiterator(v)`: Whether the given value v is an Orchestrator Iterator.
     - `jsonencode(v)`: Encode the given value v to a JSON string ([go.starlark.net/lib/json](https://pkg.go.dev/go.starlark.net/lib/json)).
     - `jsondecode(v)`: Decode the given JSON string to a value ([go.starlark.net/lib/json](https://pkg.go.dev/go.starlark.net/lib/json)).

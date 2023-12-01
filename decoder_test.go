@@ -2,6 +2,7 @@ package orchestrator_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -164,6 +165,7 @@ func TestEvaluate(t *testing.T) {
 		"key6": `{"a":"v1","b":"v2","c":"v3"}`,
 		"key7": new(orchestrator.Iterator),
 	})
+	os.Setenv("TEST_NAME", "test_value")
 
 	tests := []struct {
 		name    string
@@ -192,6 +194,11 @@ func TestEvaluate(t *testing.T) {
 				"b": "V2",
 				"c": "V3",
 			},
+		},
+		{
+			name:    "get env",
+			in:      "${getenv(\"TEST_NAME\")}",
+			wantOut: "test_value",
 		},
 		{
 			name:    "json encode",
