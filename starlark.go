@@ -97,7 +97,8 @@ func StarlarkEvalExpr(s string, env map[string]any) (any, error) {
 		}
 		envDict[k] = sv
 	}
-	// Add a pre-declared function `isiterator`.
+
+	// Add pre-declared functions.
 	envDict["getenv"] = starlark.NewBuiltin("getenv", getEnv)
 	envDict["isiterator"] = starlark.NewBuiltin("isiterator", isIterator)
 	envDict["jsonencode"] = starlark.NewBuiltin("jsonencode", encode)
@@ -112,8 +113,16 @@ func StarlarkEvalExpr(s string, env map[string]any) (any, error) {
 }
 
 func StarlarkCallFunc(s string, env map[string]any) (any, error) {
+	// Add pre-declared functions.
+	predeclared := starlark.StringDict{
+		"getenv":     starlark.NewBuiltin("getenv", getEnv),
+		"isiterator": starlark.NewBuiltin("isiterator", isIterator),
+		"jsonencode": starlark.NewBuiltin("jsonencode", encode),
+		"jsondecode": starlark.NewBuiltin("jsondecode", decode),
+	}
+
 	thread := &starlark.Thread{}
-	globals, err := starlark.ExecFile(thread, "", s, nil)
+	globals, err := starlark.ExecFile(thread, "", s, predeclared)
 	if err != nil {
 		return nil, err
 	}

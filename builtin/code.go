@@ -37,7 +37,6 @@ func MustRegisterCode(r *orchestrator.Registry) {
 //
 //	def _(env):
 //	    return [x*2 for x in input.values]
-//
 type Code struct {
 	def *orchestrator.TaskDefinition
 
