@@ -10,7 +10,7 @@ import (
 )
 
 func Example() {
-	task := builtin.NewSerial("get_todo_user").Timeout(3*time.Second).Tasks(
+	flow := builtin.NewSerial("get_todo_user").Timeout(3*time.Second).Tasks(
 		builtin.NewHTTP("get_todo").Timeout(2*time.Second).Get(
 			"https://jsonplaceholder.typicode.com/todos/${input.todoId}",
 		),
@@ -20,7 +20,7 @@ func Example() {
 	)
 
 	input := orchestrator.NewInput(map[string]any{"todoId": 1})
-	output, err := task.Execute(context.Background(), input)
+	output, err := flow.Execute(context.Background(), input)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -34,7 +34,7 @@ func Example() {
 }
 
 func Example_trace() {
-	task := builtin.NewSerial("get_todo_user").Timeout(3*time.Second).Tasks(
+	flow := builtin.NewSerial("get_todo_user").Timeout(3*time.Second).Tasks(
 		builtin.NewHTTP("get_todo").Timeout(2*time.Second).Get(
 			"https://jsonplaceholder.typicode.com/todos/${input.todoId}",
 		),
@@ -44,7 +44,7 @@ func Example_trace() {
 	)
 
 	input := orchestrator.NewInput(map[string]any{"todoId": 1})
-	event := orchestrator.TraceTask(context.Background(), task, input)
+	event := orchestrator.TraceTask(context.Background(), flow, input)
 
 	// Note that for the stability of the test, we just show the output.
 	// You may be interested in other properties of the tracing event.
@@ -88,14 +88,14 @@ func Example_constructFromJSON() {
   }
 }`)
 
-	task, err := r.ConstructFromJSON(data)
+	flow, err := r.ConstructFromJSON(data)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	input := orchestrator.NewInput(map[string]any{"todoId": 1})
-	output, err := task.Execute(context.Background(), input)
+	output, err := flow.Execute(context.Background(), input)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -109,7 +109,7 @@ func Example_constructFromJSON() {
 }
 
 func Example_actor() {
-	task := builtin.NewSerial("get_todo_user").Async(true).Tasks(
+	flow := builtin.NewSerial("get_todo_user").Async(true).Tasks(
 		builtin.NewHTTP("get_todo").Timeout(2*time.Second).Get(
 			"https://jsonplaceholder.typicode.com/todos/${input.todoId}",
 		),
@@ -131,7 +131,7 @@ func Example_actor() {
 	)
 
 	input := orchestrator.NewInput(map[string]any{"todoId": 1})
-	output, err := task.Execute(context.Background(), input)
+	output, err := flow.Execute(context.Background(), input)
 	if err != nil {
 		fmt.Println(err)
 		return
