@@ -43,6 +43,11 @@ func (o Output) Iterator() (iterator *Iterator, ok bool) {
 	return
 }
 
+func (o Output) Actor() (actor *Actor, ok bool) {
+	actor, ok = o["actor"].(*Actor)
+	return
+}
+
 type Schema struct {
 	Input  map[string]any `json:"input"`
 	Output map[string]any `json:"output"`

@@ -58,6 +58,8 @@ type Serial struct {
 	def *orchestrator.TaskDefinition
 
 	Input struct {
+		Async bool `json:"async"`
+
 		// The optional schema for the following series of subtasks.
 		//
 		// Typically, the schema is required for a standalone workflow.
@@ -78,6 +80,11 @@ func NewSerial(name string) *Serial {
 
 func (s *Serial) Timeout(timeout time.Duration) *Serial {
 	s.def.Timeout = timeout
+	return s
+}
+
+func (s *Serial) Async(async bool) *Serial {
+	s.Input.Async = async
 	return s
 }
 
@@ -107,6 +114,24 @@ func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchest
 	if err := s.Input.Schema.Validate(input.Get("input")); err != nil {
 		return nil, err
 	}
+
+	if s.Input.Async {
+		actor := orchestrator.NewActor(ctx, func(ab *orchestrator.ActorBehavior) {
+			// Add the actor behavior into the input environment for later use.
+			input.Add("actor", map[string]any{"behavior": ab})
+
+			output, err := s.execute(context.Background(), input)
+			if err != nil {
+				ab.Send(nil, err)
+				return
+			}
+
+			output["status"] = "finish" // Mark the actor status as "finish".
+			ab.Send(output, nil)
+		})
+		return orchestrator.Output{"actor": actor}, nil
+	}
+
 	return executeWithTimeout(ctx, input, s.def.Timeout, s.execute)
 }
 

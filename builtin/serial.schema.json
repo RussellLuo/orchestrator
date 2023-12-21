@@ -5,6 +5,10 @@
       "tasks"
     ],
     "properties": {
+      "async": {
+        "type": "boolean",
+        "description": "Whether to execute in an asynchronous manner."
+      },
       "schema": {
         "type": "object",
         "required": [

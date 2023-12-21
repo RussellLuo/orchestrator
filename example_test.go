@@ -107,3 +107,58 @@ func Example_constructFromJSON() {
 	// Output:
 	// Leanne Graham
 }
+
+func Example_actor() {
+	task := builtin.NewSerial("get_todo_user").Async(true).Tasks(
+		builtin.NewHTTP("get_todo").Timeout(2*time.Second).Get(
+			"https://jsonplaceholder.typicode.com/todos/${input.todoId}",
+		),
+		builtin.NewFunc("echo_once").Func(func(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
+			behavior, ok := input.Get("actor")["behavior"].(*orchestrator.ActorBehavior)
+			if !ok {
+				return nil, fmt.Errorf("task %q (of type Interact) must be used within an asynchronous flow", "echo_once")
+			}
+
+			// Send the data, received from the actor's inbox, to the actor's outbox.
+			data := behavior.Receive()
+			behavior.Send(data, nil)
+
+			return orchestrator.Output{}, nil
+		}),
+		builtin.NewHTTP("get_user").Timeout(2*time.Second).Get(
+			"https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}",
+		),
+	)
+
+	input := orchestrator.NewInput(map[string]any{"todoId": 1})
+	output, err := task.Execute(context.Background(), input)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	actor, ok := output.Actor()
+	if !ok {
+		fmt.Println("bad actor")
+		return
+	}
+
+	// Perform a ping-pong action midway.
+	actor.Inbox() <- map[string]any{"data": "Hello"}
+	result := <-actor.Outbox()
+	fmt.Println(result.Output["data"]) // Ignore error handling for simplicity.
+
+	// Finally, get the flow result.
+	result = <-actor.Outbox()
+	if result.Err != nil {
+		fmt.Println(result.Err)
+		return
+	}
+
+	body := result.Output["body"].(map[string]any)
+	fmt.Println(body["name"])
+
+	// Output:
+	// Hello
+	// Leanne Graham
+}
