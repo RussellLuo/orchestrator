@@ -107,8 +107,15 @@ func (l *Loop) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		// Save the output of the body task for the current iteration.
 		output[strconv.Itoa(i)] = map[string]any(o)
 		i++
+
+		if o.IsTerminated() {
+			// Break the iteration.
+			iter.Break()
+			goto End
+		}
 	}
 
+End:
 	// Save the total iteration number.
 	output["iteration"] = i
 	return output, nil

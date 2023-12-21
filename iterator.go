@@ -14,19 +14,29 @@ type Result struct {
 // Iterator represents a iterable object that is capable of returning its
 // values one at a time, permitting it to be iterated over in a for-loop.
 type Iterator struct {
-	ch chan Result
+	ch      chan Result
+	breakCh chan struct{}
 }
 
 func NewIterator(ctx context.Context, f func(sender *IteratorSender)) *Iterator {
 	ch := make(chan Result)
-	sender := NewIteratorSender(ctx, ch)
+	breakCh := make(chan struct{}, 1)
+
+	sender := &IteratorSender{ctx: ctx, ch: ch, breakCh: breakCh}
 	go f(sender)
 
-	return &Iterator{ch: ch}
+	return &Iterator{
+		ch:      ch,
+		breakCh: breakCh,
+	}
 }
 
 func (i *Iterator) Next() <-chan Result {
 	return i.ch
+}
+
+func (i *Iterator) Break() {
+	i.breakCh <- struct{}{}
 }
 
 func (i *Iterator) String() string {
@@ -44,15 +54,9 @@ func (i *Iterator) Equal(o *Iterator) bool {
 
 // IteratorSender is a helper for sending data to an iterator.
 type IteratorSender struct {
-	ctx context.Context
-	ch  chan<- Result
-}
-
-func NewIteratorSender(ctx context.Context, ch chan<- Result) *IteratorSender {
-	return &IteratorSender{
-		ctx: ctx,
-		ch:  ch,
-	}
+	ctx     context.Context
+	ch      chan<- Result
+	breakCh <-chan struct{}
 }
 
 // Send sends data to the internal channel. If the internal context is done
@@ -63,6 +67,8 @@ func (s *IteratorSender) Send(output Output, err error) (continue_ bool) {
 	case s.ch <- Result{Output: output, Err: err}:
 		return true
 	case <-s.ctx.Done():
+		return false
+	case <-s.breakCh:
 		return false
 	}
 }
