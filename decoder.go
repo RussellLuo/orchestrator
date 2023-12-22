@@ -18,12 +18,13 @@ const (
 	// braces. Here we only handle one level of nested curly braces. In the future, we might
 	// use a proper parser if we encounter more complex cases (e.g. deeper nesting levels).
 	//
-	// Examples:
+	// Examples of matching strings:
 	//
 	//   input.value
+	//   {}
 	//   {k: v for k, v in d.items()}
 	//
-	reInnerVar = `(?:[^{}]+|[^{]*{[^{}]+}[^}]*)`
+	reInnerVar = `(?:[^{}]+|[^{]*{[^{}]*}[^}]*)`
 )
 
 var (

@@ -178,6 +178,16 @@ func TestEvaluate(t *testing.T) {
 			wantOut: "value",
 		},
 		{
+			name:    "empty list",
+			in:      "${[]}",
+			wantOut: []any{},
+		},
+		{
+			name:    "empty map",
+			in:      "${{}}",
+			wantOut: map[string]any{},
+		},
+		{
 			name: "list comprehension",
 			in:   "${[x*2 for x in input.key4]}",
 			wantOut: []any{

@@ -191,7 +191,7 @@ func starlarkValueAsInterface(value starlark.Value) (any, error) {
 		defer it.Done()
 
 		var listItem starlark.Value
-		var result []any
+		result := []any{}
 
 		for it.Next(&listItem) {
 			listItemInterfaced, err := starlarkValueAsInterface(listItem)
