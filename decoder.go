@@ -182,7 +182,7 @@ func (e *Evaluator) evaluateExprVar(s string) (any, error) {
 	return output, nil
 }
 
-// Expr represents an expression.
+// Expr represents an expression whose value is of type T.
 type Expr[T any] struct {
 	Expr  any
 	Value T
@@ -199,6 +199,22 @@ func (e *Expr[T]) Evaluate(input Input) error {
 		return err
 	}
 	return DefaultCodec.Decode(out, &e.Value)
+}
+
+// EvaluateX evaluates the internal expression based on the given input environment.
+func (e *Expr[T]) EvaluateX(input Input) (T, error) {
+	var value T
+
+	out, err := Evaluate(e.Expr, input.Evaluate)
+	if err != nil {
+		return value, err
+	}
+
+	if err := DefaultCodec.Decode(out, &value); err != nil {
+		return value, err
+	}
+
+	return value, nil
 }
 
 // Evaluate will return a copy of v in which all expressions have been
