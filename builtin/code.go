@@ -70,5 +70,11 @@ func (c *Code) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	if err != nil {
 		return nil, err
 	}
+
+	// If the result is a map, return it as the output.
+	if r, ok := result.(map[string]any); ok {
+		return orchestrator.Output(r), nil
+	}
+	// Otherwise, create an output that contains only one field "result".
 	return orchestrator.Output{"result": result}, nil
 }

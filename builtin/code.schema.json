@@ -13,7 +13,7 @@
   },
   "output": {
     "type": "object",
-    "description": "The execution result",
+    "description": "The execution output. The result of the code will be returned as is if it's a dictionary, otherwise `{\"result\": <result>}` will be returned instead.",
     "properties": {
       "result": {}
     }
