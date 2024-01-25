@@ -8,22 +8,27 @@ import (
 // Actor represents a long-running flow that is capable of interacting with
 // the outside world through its inbox and outbox.
 type Actor struct {
+	cancel func()
 	inbox  chan map[string]any
 	outbox chan Result
 }
 
-func NewActor(ctx context.Context, f func(ab *ActorBehavior)) *Actor {
+func NewActor(f func(ctx context.Context, ab *ActorBehavior)) *Actor {
 	inbox := make(chan map[string]any)
 	outbox := make(chan Result)
+
+	// Create a new cancellable context for the actor execution.
+	ctx, cancel := context.WithCancel(context.Background())
 
 	ab := &ActorBehavior{
 		ctx:    ctx,
 		inbox:  inbox,
 		outbox: outbox,
 	}
-	go f(ab)
+	go f(ctx, ab)
 
 	return &Actor{
+		cancel: cancel,
 		inbox:  inbox,
 		outbox: outbox,
 	}
@@ -35,6 +40,10 @@ func (a *Actor) Inbox() chan<- map[string]any {
 
 func (a *Actor) Outbox() <-chan Result {
 	return a.outbox
+}
+
+func (a *Actor) Stop() {
+	a.cancel()
 }
 
 func (a *Actor) String() string {

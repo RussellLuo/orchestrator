@@ -116,11 +116,11 @@ func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchest
 	}
 
 	if s.Input.Async {
-		actor := orchestrator.NewActor(ctx, func(ab *orchestrator.ActorBehavior) {
+		actor := orchestrator.NewActor(func(ctx context.Context, ab *orchestrator.ActorBehavior) {
 			// Add the actor behavior into the input environment for later use.
 			input.Add("actor", map[string]any{"behavior": ab})
 
-			output, err := s.execute(context.Background(), input)
+			output, err := s.execute(ctx, input)
 			if err != nil {
 				ab.Send(nil, err)
 				return
