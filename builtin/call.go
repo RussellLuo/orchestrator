@@ -40,6 +40,7 @@ type Call struct {
 	Input_ struct {
 		Loader string                            `json:"loader"`
 		Task   string                            `json:"task"`
+		Raw    bool                              `json:"raw"`
 		Input  orchestrator.Expr[map[string]any] `json:"input"`
 	}
 
@@ -78,6 +79,11 @@ func (c *Call) Task(name string) *Call {
 	return c
 }
 
+func (c *Call) Raw() *Call {
+	c.Input_.Raw = true
+	return c
+}
+
 func (c *Call) Input(m map[string]any) *Call {
 	c.Input_.Input = orchestrator.Expr[map[string]any]{Expr: m}
 	return c
@@ -106,12 +112,18 @@ func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	trace := orchestrator.TraceFromContext(ctx).New(c.Name())
 	ctx = orchestrator.ContextWithTrace(ctx, trace)
 
-	if err := c.Input_.Input.Evaluate(input); err != nil {
-		return nil, err
+	inputValue := c.Input_.Input.Expr.(map[string]any)
+	if !c.Input_.Raw {
+		// If in non-raw mode, the input data will be evaluated.
+		var err error
+		inputValue, err = c.Input_.Input.EvaluateX(input)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Create a new context input since the process will enter a new scope.
-	taskInput := orchestrator.NewInput(c.Input_.Input.Value)
+	taskInput := orchestrator.NewInput(inputValue)
 	output, err := trace.Wrap(c.task).Execute(ctx, taskInput)
 	if err != nil {
 		return nil, err
@@ -143,7 +155,7 @@ func (c *Call) loadTask() error {
 // registry, you need to write your own calling code, in which you need to construct
 // the call task yourself and specify the registry by using Call.Registry().
 func CallFlow(ctx context.Context, loader, name string, input map[string]any) (orchestrator.Output, error) {
-	call, err := NewCall("call").Loader(loader).Task(name).Input(input).Done()
+	call, err := NewCall("call").Loader(loader).Task(name).Raw().Input(input).Done()
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +164,7 @@ func CallFlow(ctx context.Context, loader, name string, input map[string]any) (o
 
 // TraceFlow behaves like CallFlow but also enables tracing.
 func TraceFlow(ctx context.Context, loader, name string, input map[string]any) (orchestrator.Event, error) {
-	call, err := NewCall("call").Loader(loader).Task(name).Input(input).Done()
+	call, err := NewCall("call").Loader(loader).Task(name).Raw().Input(input).Done()
 	if err != nil {
 		return orchestrator.Event{}, err
 	}

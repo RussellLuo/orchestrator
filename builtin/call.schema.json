@@ -13,6 +13,10 @@
       "task": {
         "type": "string"
       },
+      "raw": {
+        "type": "boolean",
+        "description": "Once enabled, the `input` object will remain unchanged (i.e. no evaluation will be performed)."
+      },
       "input": {
         "type": "object",
         "patternProperties": {
