@@ -1,0 +1,29 @@
+{
+  "input": {
+    "type": "object",
+    "description": "Wait is a leaf task that is used to wait for receiving an external input (and sometimes also send an output externally before that).",
+    "required": [
+      "input_schema"
+    ],
+    "properties": {
+      "output": {
+        "type": "object",
+        "description": "The output value to send.",
+        "patternProperties": {
+          "^.*$": {}
+        }
+      },
+      "input_schema": {
+        "description": "The expected schema for the input value.",
+        "$ref": "https://json-schema.org/draft/2020-12/schema"
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "description": "The input value received",
+    "properties": {
+      "input": {}
+    }
+  }
+}
