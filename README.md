@@ -22,6 +22,7 @@ Built-in tasks:
 - [Parallel](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Parallel)
 - [Call](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Call)
 - [Code](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Code)
+- [Wait](https://pkg.go.dev/github.com/RussellLuo/orchestrator/builtin#Wait)
 
 
 ### Flow
