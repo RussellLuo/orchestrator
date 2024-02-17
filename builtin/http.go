@@ -281,7 +281,7 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 
 	case "application/json": // JSON
 		defer resp.Body.Close()
-		var m map[string]any
+		var m any
 		if err := h.codec.Decode(resp.Body, &m); err != nil {
 			return nil, err
 		}
