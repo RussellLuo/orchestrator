@@ -173,6 +173,11 @@ func TestEvaluate(t *testing.T) {
 		wantOut any
 	}{
 		{
+			name:    "is none",
+			in:      "${input.key0 == None}", // https://github.com/google/starlark-go/issues/526
+			wantOut: true,
+		},
+		{
 			name:    "string",
 			in:      "${input.key1}",
 			wantOut: "value",
