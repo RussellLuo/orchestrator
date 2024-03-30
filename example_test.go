@@ -55,7 +55,7 @@ func Example_trace() {
 	// Leanne Graham
 }
 
-func Example_JSON() {
+func Example_json() {
 	r := orchestrator.NewRegistry()
 	builtin.MustRegisterSerial(r)
 	builtin.MustRegisterHTTP(r)
@@ -116,7 +116,7 @@ func Example_actor() {
 		builtin.NewFunc("echo_once").Func(func(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
 			behavior, ok := input.Get("actor")["behavior"].(*orchestrator.ActorBehavior)
 			if !ok {
-				return nil, fmt.Errorf("task %q (of type Interact) must be used within an asynchronous flow", "echo_once")
+				return nil, fmt.Errorf("task %q must be used within an asynchronous flow", "echo_once")
 			}
 
 			// Send the data, received from the actor's inbox, to the actor's outbox.
