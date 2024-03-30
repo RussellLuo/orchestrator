@@ -37,9 +37,9 @@ type Loop struct {
 func (l *Loop) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s)",
-		l.TaskHeader.Type,
-		l.TaskHeader.Name,
-		l.TaskHeader.Timeout,
+		l.Type,
+		l.Name,
+		l.Timeout,
 	)
 }
 
@@ -104,7 +104,7 @@ func NewLoop(name string) *LoopBuilder {
 }
 
 func (b *LoopBuilder) Timeout(timeout time.Duration) *LoopBuilder {
-	b.task.TaskHeader.Timeout = timeout
+	b.task.Timeout = timeout
 	return b
 }
 

@@ -32,7 +32,7 @@ type Func struct {
 }
 
 func (f *Func) String() string {
-	return fmt.Sprintf("%s(name:%s)", f.TaskHeader.Type, f.TaskHeader.Name)
+	return fmt.Sprintf("%s(name:%s)", f.Type, f.Name)
 }
 
 func (f *Func) Execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {

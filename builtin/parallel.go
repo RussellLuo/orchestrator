@@ -41,15 +41,15 @@ func (p *Parallel) String() string {
 	}
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, tasks:[%s])",
-		p.TaskHeader.Type,
-		p.TaskHeader.Name,
-		p.TaskHeader.Timeout,
+		p.Type,
+		p.Name,
+		p.Timeout,
 		strings.Join(inputStrings, ", "),
 	)
 }
 
 func (p *Parallel) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	return executeWithTimeout(ctx, input, p.TaskHeader.Timeout, p.execute)
+	return executeWithTimeout(ctx, input, p.Timeout, p.execute)
 }
 
 func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
@@ -104,7 +104,7 @@ func NewParallel(name string) *ParallelBuilder {
 }
 
 func (b *ParallelBuilder) Timeout(timeout time.Duration) *ParallelBuilder {
-	b.task.TaskHeader.Timeout = timeout
+	b.task.Timeout = timeout
 	return b
 }
 

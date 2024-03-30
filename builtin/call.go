@@ -47,9 +47,9 @@ func (c *Call) Init(r *orchestrator.Registry) error {
 func (c *Call) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, task:%s)",
-		c.TaskHeader.Type,
-		c.TaskHeader.Name,
-		c.TaskHeader.Timeout,
+		c.Type,
+		c.Name,
+		c.Timeout,
 		c.Input.Task,
 	)
 }
@@ -120,7 +120,7 @@ func (b *CallBuilder) Registry(r *orchestrator.Registry) *CallBuilder {
 }
 
 func (b *CallBuilder) Timeout(timeout time.Duration) *CallBuilder {
-	b.task.TaskHeader.Timeout = timeout
+	b.task.Timeout = timeout
 	return b
 }
 

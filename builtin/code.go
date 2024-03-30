@@ -40,7 +40,7 @@ type Code struct {
 }
 
 func (c *Code) String() string {
-	return fmt.Sprintf("%s(name:%s)", c.TaskHeader.Type, c.TaskHeader.Name)
+	return fmt.Sprintf("%s(name:%s)", c.Type, c.Name)
 }
 
 func (c *Code) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {

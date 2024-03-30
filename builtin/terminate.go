@@ -33,7 +33,7 @@ type Terminate struct {
 }
 
 func (t *Terminate) String() string {
-	return fmt.Sprintf("%s(name:%s, output:%v, error:%v)", t.TaskHeader.Type, t.TaskHeader.Name, t.Input.Output.Expr, t.Input.Error.Expr)
+	return fmt.Sprintf("%s(name:%s, output:%v, error:%v)", t.Type, t.Name, t.Input.Output.Expr, t.Input.Error.Expr)
 }
 
 func (t *Terminate) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {

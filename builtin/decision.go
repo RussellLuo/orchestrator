@@ -47,9 +47,9 @@ func (d *Decision) String() string {
 
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, expression:%v, cases:%v, default:%s)",
-		d.TaskHeader.Type,
-		d.TaskHeader.Name,
-		d.TaskHeader.Timeout,
+		d.Type,
+		d.Name,
+		d.Timeout,
 		d.Input.Expression.Expr,
 		casesInputStrings,
 		defaultInputString,
@@ -90,7 +90,7 @@ func NewDecision(name string) *DecisionBuilder {
 }
 
 func (b *DecisionBuilder) Timeout(timeout time.Duration) *DecisionBuilder {
-	b.task.TaskHeader.Timeout = timeout
+	b.task.Timeout = timeout
 	return b
 }
 

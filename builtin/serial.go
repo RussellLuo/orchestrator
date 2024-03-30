@@ -70,9 +70,9 @@ func (s *Serial) String() string {
 	}
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, tasks:[%s])",
-		s.TaskHeader.Type,
-		s.TaskHeader.Name,
-		s.TaskHeader.Timeout,
+		s.Type,
+		s.Name,
+		s.Timeout,
 		strings.Join(inputStrings, ", "),
 	)
 }
@@ -100,7 +100,7 @@ func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchest
 		return orchestrator.Output{"actor": actor}, nil
 	}
 
-	return executeWithTimeout(ctx, input, s.TaskHeader.Timeout, s.execute)
+	return executeWithTimeout(ctx, input, s.Timeout, s.execute)
 }
 
 func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {
@@ -138,7 +138,7 @@ func NewSerial(name string) *SerialBuilder {
 }
 
 func (b *SerialBuilder) Timeout(timeout time.Duration) *SerialBuilder {
-	b.task.TaskHeader.Timeout = timeout
+	b.task.Timeout = timeout
 	return b
 }
 

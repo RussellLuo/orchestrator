@@ -43,9 +43,9 @@ type Iterate struct {
 func (i *Iterate) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s)",
-		i.TaskHeader.Type,
-		i.TaskHeader.Name,
-		i.TaskHeader.Timeout,
+		i.Type,
+		i.Name,
+		i.Timeout,
 	)
 }
 

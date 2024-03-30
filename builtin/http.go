@@ -75,7 +75,7 @@ type HTTP struct {
 }
 
 func (h *HTTP) Init(r *orchestrator.Registry) error {
-	h.client = &http.Client{Timeout: h.TaskHeader.Timeout}
+	h.client = &http.Client{Timeout: h.Timeout}
 	h.Encoding(h.Input.Encoding)
 	return nil
 }
@@ -110,9 +110,9 @@ func (h *HTTP) getEncodingHeader() map[string][]string {
 func (h *HTTP) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, request:%s %v, header:%v, body:%v)",
-		h.TaskHeader.Type,
-		h.TaskHeader.Name,
-		h.TaskHeader.Timeout,
+		h.Type,
+		h.Name,
+		h.Timeout,
 		h.Input.Method.Expr,
 		h.Input.URI.Expr,
 		h.Input.Header.Expr,
@@ -254,7 +254,7 @@ func NewHTTP(name string) *HTTPBuilder {
 }
 
 func (b *HTTPBuilder) Timeout(timeout time.Duration) *HTTPBuilder {
-	b.task.TaskHeader.Timeout = timeout
+	b.task.Timeout = timeout
 	b.task.client.Timeout = timeout
 	return b
 }
