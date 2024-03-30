@@ -11,8 +11,6 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-type InputTemplate map[string]any
-
 type Input struct {
 	*Evaluator
 }
@@ -78,18 +76,25 @@ func (s Schema) Validate(input map[string]any) error {
 	return nil
 }
 
-type TaskDefinition struct {
-	Name          string        `json:"name"`
-	Type          string        `json:"type"`
-	Description   string        `json:"description"`
-	Schema        Schema        `json:"schema"`
-	Timeout       time.Duration `json:"timeout"`
-	InputTemplate InputTemplate `json:"input"`
+type TaskHeader struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	//Schema        Schema        `json:"schema"`
+	Timeout time.Duration `json:"timeout"`
+}
+
+func (h TaskHeader) Header() TaskHeader { return h }
+
+type Initializer interface {
+	// Init initializes an application with the given context ctx.
+	// It will return an error if it fails.
+	Init(r *Registry) error
 }
 
 type Task interface {
-	// Name returns the name of the task.
-	Name() string
+	// Header returns the header fields of the task.
+	Header() TaskHeader
 
 	// String returns a string representation of the task.
 	String() string
@@ -99,8 +104,8 @@ type Task interface {
 }
 
 type TaskFactory struct {
-	Type        string
-	Constructor func(*TaskDefinition) (Task, error)
+	Type string
+	New  func() Task
 }
 
 type Registry struct {
@@ -134,28 +139,29 @@ func (r *Registry) MustRegister(factory *TaskFactory) {
 	}
 }
 
-func (r *Registry) Decode(in interface{}, out interface{}) error {
-	return r.decoder.Decode(in, out)
-}
-
-func (r *Registry) Construct(def *TaskDefinition) (Task, error) {
-	factory, ok := r.factories[def.Type]
-	if !ok {
-		return nil, fmt.Errorf("factory for task type %q is not found", def.Type)
+func (r *Registry) Construct(m map[string]any) (Task, error) {
+	typ := ""
+	if v, ok := m["type"]; ok {
+		if s, ok := v.(string); ok {
+			typ = s
+		}
 	}
-	return factory.Constructor(def)
-}
+	factory, ok := r.factories[typ]
+	if !ok {
+		return nil, fmt.Errorf("factory for task type %q is not found", typ)
+	}
 
-func (r *Registry) ConstructFromMap(m map[string]any) (Task, error) {
-	codec := structool.New().TagName("json").DecodeHook(
-		structool.DecodeStringToDuration,
-	)
-	var def *TaskDefinition
-	if err := codec.Decode(m, &def); err != nil {
+	task := factory.New()
+	if err := r.decoder.Decode(m, task); err != nil {
 		return nil, err
 	}
 
-	return r.Construct(def)
+	if initializer, ok := task.(Initializer); ok {
+		if err := initializer.Init(r); err != nil {
+			return nil, err
+		}
+	}
+	return task, nil
 }
 
 func (r *Registry) ConstructFromJSON(data []byte) (Task, error) {
@@ -164,19 +170,15 @@ func (r *Registry) ConstructFromJSON(data []byte) (Task, error) {
 		return nil, err
 	}
 
-	return r.ConstructFromMap(m)
+	return r.Construct(m)
 }
 
 func MustRegister(factory *TaskFactory) {
 	GlobalRegistry.MustRegister(factory)
 }
 
-func Construct(def *TaskDefinition) (Task, error) {
-	return GlobalRegistry.Construct(def)
-}
-
-func ConstructFromMap(m map[string]any) (Task, error) {
-	return GlobalRegistry.ConstructFromMap(m)
+func Construct(m map[string]any) (Task, error) {
+	return GlobalRegistry.Construct(m)
 }
 
 func ConstructFromJSON(data []byte) (Task, error) {

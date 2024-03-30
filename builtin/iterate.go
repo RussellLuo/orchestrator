@@ -25,30 +25,24 @@ func init() {
 func MustRegisterIterate(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeIterate,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			p := &Iterate{def: def}
-			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
-				return nil, err
-			}
-			return p, nil
-		},
+		New:  func() orchestrator.Task { return new(Iterate) },
 	})
 }
 
 // Iterate is a leaf task that is used to make an iterator from a slice/map/range.
 // Note that an Iterate task is always used along with a Loop task.
 type Iterate struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Type  IterateType `json:"type"`
 		Value any         `json:"value"`
-	}
+	} `json:"input"`
 }
 
 func NewIterate(name string) *Iterate {
 	return &Iterate{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeIterate,
 		},
@@ -73,14 +67,12 @@ func (i *Iterate) Range(v any) *Iterate {
 	return i
 }
 
-func (i *Iterate) Name() string { return i.def.Name }
-
 func (i *Iterate) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s)",
-		i.def.Type,
-		i.def.Name,
-		i.def.Timeout,
+		i.TaskHeader.Type,
+		i.TaskHeader.Name,
+		i.TaskHeader.Timeout,
 	)
 }
 

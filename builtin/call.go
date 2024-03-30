@@ -19,30 +19,20 @@ func init() {
 func MustRegisterCall(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeCall,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			c := &Call{def: def, registry: r}
-			if err := r.Decode(def.InputTemplate, &c.Input_); err != nil {
-				return nil, err
-			}
-
-			if err := c.loadTask(); err != nil {
-				return nil, err
-			}
-			return c, nil
-		},
+		New:  func() orchestrator.Task { return new(Call) },
 	})
 }
 
 // Call is a composite task that is used to call another task with corresponding input.
 type Call struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input_ struct {
 		Loader string                            `json:"loader"`
 		Task   string                            `json:"task"`
 		Raw    bool                              `json:"raw"`
 		Input  orchestrator.Expr[map[string]any] `json:"input"`
-	}
+	} `json:"input"`
 
 	// The actual task.
 	task     orchestrator.Task
@@ -51,12 +41,17 @@ type Call struct {
 
 func NewCall(name string) *Call {
 	return &Call{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeCall,
 		},
 		registry: orchestrator.GlobalRegistry,
 	}
+}
+
+func (c *Call) Init(r *orchestrator.Registry) error {
+	c.registry = r
+	return c.loadTask()
 }
 
 func (c *Call) Registry(r *orchestrator.Registry) *Call {
@@ -65,7 +60,7 @@ func (c *Call) Registry(r *orchestrator.Registry) *Call {
 }
 
 func (c *Call) Timeout(timeout time.Duration) *Call {
-	c.def.Timeout = timeout
+	c.TaskHeader.Timeout = timeout
 	return c
 }
 
@@ -96,20 +91,18 @@ func (c *Call) Done() (*Call, error) {
 	return c, nil
 }
 
-func (c *Call) Name() string { return c.def.Name }
-
 func (c *Call) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, task:%s)",
-		c.def.Type,
-		c.def.Name,
-		c.def.Timeout,
+		c.TaskHeader.Type,
+		c.TaskHeader.Name,
+		c.TaskHeader.Timeout,
 		c.Input_.Task,
 	)
 }
 
 func (c *Call) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	trace := orchestrator.TraceFromContext(ctx).New(c.Name())
+	trace := orchestrator.TraceFromContext(ctx).New(c.Name)
 	ctx = orchestrator.ContextWithTrace(ctx, trace)
 
 	inputValue := c.Input_.Input.Expr.(map[string]any)
@@ -145,7 +138,12 @@ func (c *Call) loadTask() error {
 	if err != nil {
 		return err
 	}
-	return c.registry.Decode(taskDef, &c.task)
+	task, err := c.registry.Construct(taskDef)
+	if err != nil {
+		return err
+	}
+	c.task = task
+	return nil
 }
 
 // CallFlow loads the given flow from the given loader, and then executes the flow with the given input.

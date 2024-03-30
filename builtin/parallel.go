@@ -21,28 +21,22 @@ func init() {
 func MustRegisterParallel(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeParallel,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			p := &Parallel{def: def}
-			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
-				return nil, err
-			}
-			return p, nil
-		},
+		New:  func() orchestrator.Task { return new(Parallel) },
 	})
 }
 
 // Parallel is a composite task that is used to execute its subtasks in parallel.
 type Parallel struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Tasks []orchestrator.Task `json:"tasks"`
-	}
+	} `json:"input"`
 }
 
 func NewParallel(name string) *Parallel {
 	return &Parallel{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeParallel,
 		},
@@ -50,7 +44,7 @@ func NewParallel(name string) *Parallel {
 }
 
 func (p *Parallel) Timeout(timeout time.Duration) *Parallel {
-	p.def.Timeout = timeout
+	p.TaskHeader.Timeout = timeout
 	return p
 }
 
@@ -59,8 +53,6 @@ func (p *Parallel) Tasks(tasks ...orchestrator.Task) *Parallel {
 	return p
 }
 
-func (p *Parallel) Name() string { return p.def.Name }
-
 func (p *Parallel) String() string {
 	var inputStrings []string
 	for _, t := range p.Input.Tasks {
@@ -68,19 +60,19 @@ func (p *Parallel) String() string {
 	}
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, tasks:[%s])",
-		p.def.Type,
-		p.def.Name,
-		p.def.Timeout,
+		p.TaskHeader.Type,
+		p.TaskHeader.Name,
+		p.TaskHeader.Timeout,
 		strings.Join(inputStrings, ", "),
 	)
 }
 
 func (p *Parallel) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	return executeWithTimeout(ctx, input, p.def.Timeout, p.execute)
+	return executeWithTimeout(ctx, input, p.TaskHeader.Timeout, p.execute)
 }
 
 func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	trace := orchestrator.TraceFromContext(ctx).New(p.Name())
+	trace := orchestrator.TraceFromContext(ctx).New(p.Name)
 	ctx = orchestrator.ContextWithTrace(ctx, trace)
 
 	// Scatter
@@ -89,7 +81,7 @@ func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orche
 		go func(t orchestrator.Task) {
 			output, err := t.Execute(ctx, input)
 			resultChan <- orchestrator.Result{
-				Name:   t.Name(),
+				Name:   t.Header().Name,
 				Output: output,
 				Err:    err,
 			}

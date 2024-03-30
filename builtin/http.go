@@ -24,19 +24,7 @@ func init() {
 func MustRegisterHTTP(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeHTTP,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			h := &HTTP{
-				def:    def,
-				client: &http.Client{Timeout: def.Timeout},
-			}
-			if err := r.Decode(def.InputTemplate, &h.Input); err != nil {
-				return nil, err
-			}
-
-			h.Encoding(h.Input.Encoding)
-
-			return h, nil
-		},
+		New:  func() orchestrator.Task { return new(HTTP) },
 	})
 }
 
@@ -70,10 +58,7 @@ func (j JSON) Encode(in any) (io.Reader, error) {
 
 // HTTP is a leaf task that is used to make calls to another service over HTTP.
 type HTTP struct {
-	def *orchestrator.TaskDefinition
-
-	client *http.Client
-	codec  Codec
+	orchestrator.TaskHeader
 
 	Input struct {
 		Encoding string                                 `json:"encoding"`
@@ -83,12 +68,15 @@ type HTTP struct {
 		Body     orchestrator.Expr[map[string]any]      `json:"body"`
 		// A filter expression for extracting fields from a server-sent event.
 		SSEFilter string `json:"sse_filter"`
-	}
+	} `json:"input"`
+
+	client *http.Client
+	codec  Codec
 }
 
 func NewHTTP(name string) *HTTP {
 	h := &HTTP{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeHTTP,
 		},
@@ -97,8 +85,14 @@ func NewHTTP(name string) *HTTP {
 	return h.Encoding("json")
 }
 
+func (h *HTTP) Init(r *orchestrator.Registry) error {
+	h.client = &http.Client{Timeout: h.TaskHeader.Timeout}
+	h.Encoding(h.Input.Encoding)
+	return nil
+}
+
 func (h *HTTP) Timeout(timeout time.Duration) *HTTP {
-	h.def.Timeout = timeout
+	h.TaskHeader.Timeout = timeout
 	h.client.Timeout = timeout
 	return h
 }
@@ -171,14 +165,12 @@ func (h *HTTP) Body(body map[string]any) *HTTP {
 	return h
 }
 
-func (h *HTTP) Name() string { return h.def.Name }
-
 func (h *HTTP) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, request:%s %v, header:%v, body:%v)",
-		h.def.Type,
-		h.def.Name,
-		h.def.Timeout,
+		h.TaskHeader.Type,
+		h.TaskHeader.Name,
+		h.TaskHeader.Timeout,
 		h.Input.Method.Expr,
 		h.Input.URI.Expr,
 		h.Input.Header.Expr,

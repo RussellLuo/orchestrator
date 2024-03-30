@@ -20,29 +20,23 @@ func init() {
 func MustRegisterLoop(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeLoop,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			p := &Loop{def: def}
-			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
-				return nil, err
-			}
-			return p, nil
-		},
+		New:  func() orchestrator.Task { return new(Loop) },
 	})
 }
 
 // Loop is a composite task that is similar to the `for` statement in Go.
 type Loop struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Iterator orchestrator.Task `json:"iterator"`
 		Body     orchestrator.Task `json:"body"`
-	}
+	} `json:"input"`
 }
 
 func NewLoop(name string) *Loop {
 	return &Loop{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeLoop,
 		},
@@ -50,7 +44,7 @@ func NewLoop(name string) *Loop {
 }
 
 func (l *Loop) Timeout(timeout time.Duration) *Loop {
-	l.def.Timeout = timeout
+	l.TaskHeader.Timeout = timeout
 	return l
 }
 
@@ -64,19 +58,17 @@ func (l *Loop) Body(task orchestrator.Task) *Loop {
 	return l
 }
 
-func (l *Loop) Name() string { return l.def.Name }
-
 func (l *Loop) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s)",
-		l.def.Type,
-		l.def.Name,
-		l.def.Timeout,
+		l.TaskHeader.Type,
+		l.TaskHeader.Name,
+		l.TaskHeader.Timeout,
 	)
 }
 
 func (l *Loop) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	trace := orchestrator.TraceFromContext(ctx).New(l.Name())
+	trace := orchestrator.TraceFromContext(ctx).New(l.Name)
 	ctx = orchestrator.ContextWithTrace(ctx, trace)
 
 	iterOutput, err := trace.Wrap(l.Input.Iterator).Execute(ctx, input)
@@ -84,7 +76,7 @@ func (l *Loop) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		return nil, err
 	}
 
-	iterName := l.Input.Iterator.Name()
+	iterName := l.Input.Iterator.Header().Name
 	iter, ok := iterOutput.Iterator()
 	if !ok {
 		return nil, fmt.Errorf("bad iterator: %s", iterName)

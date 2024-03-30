@@ -18,28 +18,22 @@ func init() {
 func MustRegisterFunc(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeFunc,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			p := &Func{def: def}
-			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
-				return nil, err
-			}
-			return p, nil
-		},
+		New:  func() orchestrator.Task { return new(Func) },
 	})
 }
 
 // Func is a leaf task that is used to execute the input function with the given arguments.
 type Func struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Func func(context.Context, orchestrator.Input) (orchestrator.Output, error) `json:"func"`
-	}
+	} `json:input`
 }
 
 func NewFunc(name string) *Func {
 	return &Func{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeFunc,
 		},
@@ -51,10 +45,8 @@ func (f *Func) Func(ef func(context.Context, orchestrator.Input) (orchestrator.O
 	return f
 }
 
-func (f *Func) Name() string { return f.def.Name }
-
 func (f *Func) String() string {
-	return fmt.Sprintf("%s(name:%s)", f.def.Type, f.def.Name)
+	return fmt.Sprintf("%s(name:%s)", f.TaskHeader.Type, f.TaskHeader.Name)
 }
 
 func (f *Func) Execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {

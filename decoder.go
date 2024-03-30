@@ -292,12 +292,12 @@ func decodeDefinitionToTask(r *Registry) func(next structool.DecodeHookFunc) str
 				return next(from, to)
 			}
 
-			var def *TaskDefinition
-			if err := DefaultCodec.Decode(from.Interface(), &def); err != nil {
+			var m map[string]any
+			if err := DefaultCodec.Decode(from.Interface(), &m); err != nil {
 				return nil, err
 			}
 
-			task, err := r.Construct(def)
+			task, err := r.Construct(m)
 			if err != nil {
 				return nil, err
 			}

@@ -19,30 +19,24 @@ func init() {
 func MustRegisterDecision(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeDecision,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			p := &Decision{def: def}
-			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
-				return nil, err
-			}
-			return p, nil
-		},
+		New:  func() orchestrator.Task { return new(Decision) },
 	})
 }
 
 // Decision is a composite task that is similar to the `switch` statement in Go.
 type Decision struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Expression orchestrator.Expr[any]    `json:"expression"`
 		Cases      map[any]orchestrator.Task `json:"cases"`
 		Default    orchestrator.Task         `json:"default"`
-	}
+	} `json:"input"`
 }
 
 func NewDecision(name string) *Decision {
 	return &Decision{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeDecision,
 		},
@@ -50,7 +44,7 @@ func NewDecision(name string) *Decision {
 }
 
 func (d *Decision) Timeout(timeout time.Duration) *Decision {
-	d.def.Timeout = timeout
+	d.TaskHeader.Timeout = timeout
 	return d
 }
 
@@ -72,8 +66,6 @@ func (d *Decision) Default(task orchestrator.Task) *Decision {
 	return d
 }
 
-func (d *Decision) Name() string { return d.def.Name }
-
 func (d *Decision) String() string {
 	casesInputStrings := make(map[any]string)
 	for v, t := range d.Input.Cases {
@@ -87,9 +79,9 @@ func (d *Decision) String() string {
 
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, expression:%v, cases:%v, default:%s)",
-		d.def.Type,
-		d.def.Name,
-		d.def.Timeout,
+		d.TaskHeader.Type,
+		d.TaskHeader.Name,
+		d.TaskHeader.Timeout,
 		d.Input.Expression.Expr,
 		casesInputStrings,
 		defaultInputString,
@@ -97,7 +89,7 @@ func (d *Decision) String() string {
 }
 
 func (d *Decision) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
-	trace := orchestrator.TraceFromContext(ctx).New(d.Name())
+	trace := orchestrator.TraceFromContext(ctx).New(d.Name)
 	ctx = orchestrator.ContextWithTrace(ctx, trace)
 
 	if err := d.Input.Expression.Evaluate(input); err != nil {

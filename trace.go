@@ -169,7 +169,7 @@ type traceTask struct {
 func (t traceTask) Execute(ctx context.Context, input Input) (Output, error) {
 	trace := TraceFromContext(ctx)
 	output, err := t.Task.Execute(ctx, input)
-	trace.AddEvent(t.Task.Name(), output, err)
+	trace.AddEvent(t.Task.Header().Name, output, err)
 	return output, err
 }
 

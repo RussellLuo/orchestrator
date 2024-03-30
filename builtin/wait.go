@@ -18,13 +18,7 @@ func init() {
 func MustRegisterWait(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeWait,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			w := &Wait{def: def}
-			if err := r.Decode(def.InputTemplate, &w.Input); err != nil {
-				return nil, err
-			}
-			return w, nil
-		},
+		New:  func() orchestrator.Task { return new(Wait) },
 	})
 }
 
@@ -33,27 +27,25 @@ func MustRegisterWait(r *orchestrator.Registry) {
 //
 // Note that a Wait task must be used within an actor (i.e. asynchronous Serial task).
 type Wait struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Output      orchestrator.Expr[map[string]any] `json:"output"`
 		InputSchema map[string]any                    `json:"input_schema"`
-	}
+	} `json:"input"`
 }
 
 func NewWait(name string) *Wait {
 	return &Wait{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeWait,
 		},
 	}
 }
 
-func (w *Wait) Name() string { return w.def.Name }
-
 func (w *Wait) String() string {
-	return fmt.Sprintf("%s(name:%s)", w.def.Type, w.def.Name)
+	return fmt.Sprintf("%s(name:%s)", w.Type, w.Name)
 }
 
 func (w *Wait) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {
@@ -63,7 +55,7 @@ func (w *Wait) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 
 	behavior, ok := input.Get("actor")["behavior"].(*orchestrator.ActorBehavior)
 	if !ok {
-		return nil, fmt.Errorf("task %q (of type Wait) must be used within an asynchronous flow", w.Name())
+		return nil, fmt.Errorf("task %q (of type Wait) must be used within an asynchronous flow", w.Name)
 	}
 
 	// Send the output value, if non-empty, to the actor's outbox.

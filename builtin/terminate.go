@@ -18,29 +18,23 @@ func init() {
 func MustRegisterTerminate(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeTerminate,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			p := &Terminate{def: def}
-			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
-				return nil, err
-			}
-			return p, nil
-		},
+		New:  func() orchestrator.Task { return new(Terminate) },
 	})
 }
 
 // Terminate is a leaf task that is used to terminate the execution of a flow and return an output.
 type Terminate struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Output orchestrator.Expr[orchestrator.Output] `json:"output"`
 		Error  orchestrator.Expr[string]              `json:"error"`
-	}
+	} `json:"input"`
 }
 
 func NewTerminate(name string) *Terminate {
 	return &Terminate{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeTerminate,
 		},
@@ -57,10 +51,8 @@ func (t *Terminate) Error(err any) *Terminate {
 	return t
 }
 
-func (t *Terminate) Name() string { return t.def.Name }
-
 func (t *Terminate) String() string {
-	return fmt.Sprintf("%s(name:%s, output:%v, error:%v)", t.def.Type, t.def.Name, t.Input.Output.Expr, t.Input.Error.Expr)
+	return fmt.Sprintf("%s(name:%s, output:%v, error:%v)", t.TaskHeader.Type, t.TaskHeader.Name, t.Input.Output.Expr, t.Input.Error.Expr)
 }
 
 func (t *Terminate) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {

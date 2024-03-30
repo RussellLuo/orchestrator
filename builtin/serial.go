@@ -20,13 +20,7 @@ func init() {
 func MustRegisterSerial(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeSerial,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			p := &Serial{def: def}
-			if err := r.Decode(def.InputTemplate, &p.Input); err != nil {
-				return nil, err
-			}
-			return p, nil
-		},
+		New:  func() orchestrator.Task { return new(Serial) },
 	})
 }
 
@@ -55,7 +49,7 @@ func executeWithTimeout(ctx context.Context, input orchestrator.Input, timeout t
 
 // Serial is a composite task that is used to execute its subtasks serially.
 type Serial struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Async bool `json:"async"`
@@ -66,12 +60,12 @@ type Serial struct {
 		Schema orchestrator.Schema `json:schema,omitempty`
 
 		Tasks []orchestrator.Task `json:"tasks"`
-	}
+	} `json:"input"`
 }
 
 func NewSerial(name string) *Serial {
 	return &Serial{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeSerial,
 		},
@@ -79,7 +73,7 @@ func NewSerial(name string) *Serial {
 }
 
 func (s *Serial) Timeout(timeout time.Duration) *Serial {
-	s.def.Timeout = timeout
+	s.TaskHeader.Timeout = timeout
 	return s
 }
 
@@ -93,8 +87,6 @@ func (s *Serial) Tasks(tasks ...orchestrator.Task) *Serial {
 	return s
 }
 
-func (s *Serial) Name() string { return s.def.Name }
-
 func (s *Serial) String() string {
 	var inputStrings []string
 	for _, t := range s.Input.Tasks {
@@ -102,9 +94,9 @@ func (s *Serial) String() string {
 	}
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s, tasks:[%s])",
-		s.def.Type,
-		s.def.Name,
-		s.def.Timeout,
+		s.TaskHeader.Type,
+		s.TaskHeader.Name,
+		s.TaskHeader.Timeout,
 		strings.Join(inputStrings, ", "),
 	)
 }
@@ -132,11 +124,11 @@ func (s *Serial) Execute(ctx context.Context, input orchestrator.Input) (orchest
 		return orchestrator.Output{"actor": actor}, nil
 	}
 
-	return executeWithTimeout(ctx, input, s.def.Timeout, s.execute)
+	return executeWithTimeout(ctx, input, s.TaskHeader.Timeout, s.execute)
 }
 
 func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {
-	trace := orchestrator.TraceFromContext(ctx).New(s.Name())
+	trace := orchestrator.TraceFromContext(ctx).New(s.Name)
 	ctx = orchestrator.ContextWithTrace(ctx, trace)
 
 	for _, t := range s.Input.Tasks {
@@ -149,7 +141,7 @@ func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output 
 			return output, nil
 		}
 
-		input.Add(t.Name(), output)
+		input.Add(t.Header().Name, output)
 	}
 
 	return output, nil

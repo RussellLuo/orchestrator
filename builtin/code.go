@@ -18,13 +18,7 @@ func init() {
 func MustRegisterCode(r *orchestrator.Registry) {
 	r.MustRegister(&orchestrator.TaskFactory{
 		Type: TypeCode,
-		Constructor: func(def *orchestrator.TaskDefinition) (orchestrator.Task, error) {
-			code := &Code{def: def}
-			if err := r.Decode(def.InputTemplate, &code.Input); err != nil {
-				return nil, err
-			}
-			return code, nil
-		},
+		New:  func() orchestrator.Task { return new(Code) },
 	})
 }
 
@@ -38,16 +32,16 @@ func MustRegisterCode(r *orchestrator.Registry) {
 //	def _(env):
 //	    return [x*2 for x in env.input.values]
 type Code struct {
-	def *orchestrator.TaskDefinition
+	orchestrator.TaskHeader
 
 	Input struct {
 		Code string `json:"code"`
-	}
+	} `json:"input"`
 }
 
 func NewCode(name string) *Code {
 	return &Code{
-		def: &orchestrator.TaskDefinition{
+		TaskHeader: orchestrator.TaskHeader{
 			Name: name,
 			Type: TypeCode,
 		},
@@ -59,10 +53,8 @@ func (c *Code) Code(s string) *Code {
 	return c
 }
 
-func (c *Code) Name() string { return c.def.Name }
-
 func (c *Code) String() string {
-	return fmt.Sprintf("%s(name:%s)", c.def.Type, c.def.Name)
+	return fmt.Sprintf("%s(name:%s)", c.TaskHeader.Type, c.TaskHeader.Name)
 }
 
 func (c *Code) Execute(ctx context.Context, input orchestrator.Input) (orchestrator.Output, error) {

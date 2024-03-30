@@ -14,28 +14,28 @@ import (
 func TestConstructDecoder(t *testing.T) {
 	tests := []struct {
 		name          string
-		inTaskDef     *orchestrator.TaskDefinition
+		inTaskDef     map[string]any
 		wantTaskInput string
 	}{
 		{
 			name: "serial",
-			inTaskDef: &orchestrator.TaskDefinition{
-				Name:    "greeting",
-				Type:    builtin.TypeSerial,
-				Timeout: time.Second,
-				InputTemplate: orchestrator.InputTemplate{
-					"tasks": []*orchestrator.TaskDefinition{
+			inTaskDef: map[string]any{
+				"name":    "greeting",
+				"type":    builtin.TypeSerial,
+				"timeout": time.Second,
+				"input": map[string]any{
+					"tasks": []map[string]any{
 						{
-							Name: "say_name",
-							Type: builtin.TypeFunc,
-							InputTemplate: orchestrator.InputTemplate{
+							"name": "say_name",
+							"type": builtin.TypeFunc,
+							"input": map[string]any{
 								"func": func(context.Context, orchestrator.Input) (orchestrator.Output, error) { return nil, nil },
 							},
 						},
 						{
-							Name: "say_hello",
-							Type: builtin.TypeFunc,
-							InputTemplate: orchestrator.InputTemplate{
+							"name": "say_hello",
+							"type": builtin.TypeFunc,
+							"input": map[string]any{
 								"func": func(context.Context, orchestrator.Input) (orchestrator.Output, error) { return nil, nil },
 							},
 						},
@@ -46,23 +46,23 @@ func TestConstructDecoder(t *testing.T) {
 		},
 		{
 			name: "parallel",
-			inTaskDef: &orchestrator.TaskDefinition{
-				Name:    "count",
-				Type:    builtin.TypeParallel,
-				Timeout: time.Second,
-				InputTemplate: orchestrator.InputTemplate{
-					"tasks": []*orchestrator.TaskDefinition{
+			inTaskDef: map[string]any{
+				"name":    "count",
+				"type":    builtin.TypeParallel,
+				"timeout": time.Second,
+				"input": map[string]any{
+					"tasks": []map[string]any{
 						{
-							Name: "one",
-							Type: builtin.TypeFunc,
-							InputTemplate: orchestrator.InputTemplate{
+							"name": "one",
+							"type": builtin.TypeFunc,
+							"input": map[string]any{
 								"func": func(context.Context, orchestrator.Input) (orchestrator.Output, error) { return nil, nil },
 							},
 						},
 						{
-							Name: "two",
-							Type: builtin.TypeFunc,
-							InputTemplate: orchestrator.InputTemplate{
+							"name": "two",
+							"type": builtin.TypeFunc,
+							"input": map[string]any{
 								"func": func(context.Context, orchestrator.Input) (orchestrator.Output, error) { return nil, nil },
 							},
 						},
@@ -73,11 +73,11 @@ func TestConstructDecoder(t *testing.T) {
 		},
 		{
 			name: "http",
-			inTaskDef: &orchestrator.TaskDefinition{
-				Name:    "count",
-				Type:    builtin.TypeHTTP,
-				Timeout: time.Second,
-				InputTemplate: orchestrator.InputTemplate{
+			inTaskDef: map[string]any{
+				"name":    "count",
+				"type":    builtin.TypeHTTP,
+				"timeout": time.Second,
+				"input": map[string]any{
 					"method": "GET",
 					"uri":    "https://example.com",
 				},
@@ -86,24 +86,24 @@ func TestConstructDecoder(t *testing.T) {
 		},
 		{
 			name: "decision",
-			inTaskDef: &orchestrator.TaskDefinition{
-				Name: "test",
-				Type: builtin.TypeDecision,
-				InputTemplate: orchestrator.InputTemplate{
+			inTaskDef: map[string]any{
+				"name": "test",
+				"type": builtin.TypeDecision,
+				"input": map[string]any{
 					"expression": 0,
-					"cases": map[int]*orchestrator.TaskDefinition{
+					"cases": map[int]map[string]any{
 						0: {
-							Name: "case_0",
-							Type: builtin.TypeFunc,
-							InputTemplate: orchestrator.InputTemplate{
+							"name": "case_0",
+							"type": builtin.TypeFunc,
+							"input": map[string]any{
 								"func": func(context.Context, orchestrator.Input) (orchestrator.Output, error) { return nil, nil },
 							},
 						},
 					},
-					"default": &orchestrator.TaskDefinition{
-						Name: "default",
-						Type: builtin.TypeFunc,
-						InputTemplate: orchestrator.InputTemplate{
+					"default": map[string]any{
+						"name": "default",
+						"type": builtin.TypeFunc,
+						"input": map[string]any{
 							"func": func(context.Context, orchestrator.Input) (orchestrator.Output, error) { return nil, nil },
 						},
 					},
@@ -113,11 +113,11 @@ func TestConstructDecoder(t *testing.T) {
 		},
 		{
 			name: "terminate",
-			inTaskDef: &orchestrator.TaskDefinition{
-				Name:    "count",
-				Type:    builtin.TypeTerminate,
-				Timeout: time.Second,
-				InputTemplate: orchestrator.InputTemplate{
+			inTaskDef: map[string]any{
+				"name":    "count",
+				"type":    builtin.TypeTerminate,
+				"timeout": time.Second,
+				"input": map[string]any{
 					"output": map[string]any(nil),
 				},
 			},
