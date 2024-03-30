@@ -145,10 +145,8 @@ func (r *Registry) MustRegister(factory *TaskFactory) {
 
 func (r *Registry) Construct(m map[string]any) (Task, error) {
 	typ := ""
-	if v, ok := m["type"]; ok {
-		if s, ok := v.(string); ok {
-			typ = s
-		}
+	if s, ok := m["type"].(string); ok {
+		typ = s
 	}
 	factory, ok := r.factories[typ]
 	if !ok {
