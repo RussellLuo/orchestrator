@@ -24,7 +24,7 @@ func TestHTTP_Execute(t *testing.T) {
 			},
 			inTask: builtin.NewHTTP("test").Get(
 				"https://jsonplaceholder.typicode.com/todos/${input.todoId}",
-			),
+			).Build(),
 			wantOutput: o.Output{
 				"status": 200,
 				"body": map[string]any{
@@ -42,7 +42,7 @@ func TestHTTP_Execute(t *testing.T) {
 			},
 			inTask: builtin.NewHTTP("test").Get(
 				"https://jsonplaceholder.typicode.com/todos?id=${input.todoId}",
-			),
+			).Build(),
 			wantOutput: o.Output{
 				"status": 200,
 				"body": []any{

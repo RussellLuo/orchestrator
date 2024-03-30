@@ -39,20 +39,6 @@ type Code struct {
 	} `json:"input"`
 }
 
-func NewCode(name string) *Code {
-	return &Code{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeCode,
-		},
-	}
-}
-
-func (c *Code) Code(s string) *Code {
-	c.Input.Code = s
-	return c
-}
-
 func (c *Code) String() string {
 	return fmt.Sprintf("%s(name:%s)", c.TaskHeader.Type, c.TaskHeader.Name)
 }
@@ -69,4 +55,27 @@ func (c *Code) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	}
 	// Otherwise, create an output that contains only one field "result".
 	return orchestrator.Output{"result": result}, nil
+}
+
+type CodeBuilder struct {
+	task *Code
+}
+
+func NewCode(name string) *CodeBuilder {
+	task := &Code{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeCode,
+		},
+	}
+	return &CodeBuilder{task: task}
+}
+
+func (b *CodeBuilder) Code(s string) *CodeBuilder {
+	b.task.Input.Code = s
+	return b
+}
+
+func (b *CodeBuilder) Build() orchestrator.Task {
+	return b.task
 }

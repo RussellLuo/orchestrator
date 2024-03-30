@@ -17,7 +17,7 @@ func Example() {
 		builtin.NewHTTP("get_user").Timeout(2*time.Second).Get(
 			"https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}",
 		),
-	)
+	).Build()
 
 	input := orchestrator.NewInput(map[string]any{"todoId": 1})
 	output, err := flow.Execute(context.Background(), input)
@@ -41,7 +41,7 @@ func Example_trace() {
 		builtin.NewHTTP("get_user").Timeout(2*time.Second).Get(
 			"https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}",
 		),
-	)
+	).Build()
 
 	input := orchestrator.NewInput(map[string]any{"todoId": 1})
 	event := orchestrator.TraceTask(context.Background(), flow, input)
@@ -55,7 +55,7 @@ func Example_trace() {
 	// Leanne Graham
 }
 
-func Example_constructFromJSON() {
+func Example_JSON() {
 	r := orchestrator.NewRegistry()
 	builtin.MustRegisterSerial(r)
 	builtin.MustRegisterHTTP(r)
@@ -128,7 +128,7 @@ func Example_actor() {
 		builtin.NewHTTP("get_user").Timeout(2*time.Second).Get(
 			"https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}",
 		),
-	)
+	).Build()
 
 	input := orchestrator.NewInput(map[string]any{"todoId": 1})
 	output, err := flow.Execute(context.Background(), input)

@@ -32,25 +32,6 @@ type Terminate struct {
 	} `json:"input"`
 }
 
-func NewTerminate(name string) *Terminate {
-	return &Terminate{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeTerminate,
-		},
-	}
-}
-
-func (t *Terminate) Output(output any) *Terminate {
-	t.Input.Output = orchestrator.Expr[orchestrator.Output]{Expr: output}
-	return t
-}
-
-func (t *Terminate) Error(err any) *Terminate {
-	t.Input.Error = orchestrator.Expr[string]{Expr: err}
-	return t
-}
-
 func (t *Terminate) String() string {
 	return fmt.Sprintf("%s(name:%s, output:%v, error:%v)", t.TaskHeader.Type, t.TaskHeader.Name, t.Input.Output.Expr, t.Input.Error.Expr)
 }
@@ -76,4 +57,32 @@ func (t *Terminate) Execute(ctx context.Context, input orchestrator.Input) (orch
 	}
 	output.SetTerminated()
 	return output, nil
+}
+
+type TerminateBuilder struct {
+	task *Terminate
+}
+
+func NewTerminate(name string) *TerminateBuilder {
+	task := &Terminate{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeTerminate,
+		},
+	}
+	return &TerminateBuilder{task: task}
+}
+
+func (b *TerminateBuilder) Output(output any) *TerminateBuilder {
+	b.task.Input.Output = orchestrator.Expr[orchestrator.Output]{Expr: output}
+	return b
+}
+
+func (b *TerminateBuilder) Error(err any) *TerminateBuilder {
+	b.task.Input.Error = orchestrator.Expr[string]{Expr: err}
+	return b
+}
+
+func (b *TerminateBuilder) Build() orchestrator.Task {
+	return b.task
 }

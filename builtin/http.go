@@ -74,27 +74,10 @@ type HTTP struct {
 	codec  Codec
 }
 
-func NewHTTP(name string) *HTTP {
-	h := &HTTP{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeHTTP,
-		},
-		client: &http.Client{},
-	}
-	return h.Encoding("json")
-}
-
 func (h *HTTP) Init(r *orchestrator.Registry) error {
 	h.client = &http.Client{Timeout: h.TaskHeader.Timeout}
 	h.Encoding(h.Input.Encoding)
 	return nil
-}
-
-func (h *HTTP) Timeout(timeout time.Duration) *HTTP {
-	h.TaskHeader.Timeout = timeout
-	h.client.Timeout = timeout
-	return h
 }
 
 func (h *HTTP) Encoding(encoding string) *HTTP {
@@ -122,47 +105,6 @@ func (h *HTTP) getEncodingHeader() map[string][]string {
 	default:
 		return nil
 	}
-}
-
-func (h *HTTP) Request(method, uri string) *HTTP {
-	h.Input.Method = orchestrator.Expr[string]{Expr: method}
-	h.Input.URI = orchestrator.Expr[string]{Expr: uri}
-	return h
-}
-
-func (h *HTTP) Get(uri string) *HTTP {
-	return h.Request("GET", uri)
-}
-
-func (h *HTTP) Post(uri string) *HTTP {
-	return h.Request("POST", uri)
-}
-
-func (h *HTTP) Patch(uri string) *HTTP {
-	return h.Request("PATCH", uri)
-}
-
-func (h *HTTP) Put(uri string) *HTTP {
-	return h.Request("PUT", uri)
-}
-
-func (h *HTTP) Delete(uri string) *HTTP {
-	return h.Request("DELETE", uri)
-}
-
-/*
-func (h *HTTP) Header(key string, values ...string) *HTTP {
-	if h.Input.Header == nil {
-		h.Input.Header = make(map[string][]string)
-	}
-	h.Input.Header[key] = values
-	return h
-}
-*/
-
-func (h *HTTP) Body(body map[string]any) *HTTP {
-	h.Input.Body = orchestrator.Expr[map[string]any]{Expr: body}
-	return h
 }
 
 func (h *HTTP) String() string {
@@ -293,4 +235,69 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 		"header": resp.Header,
 		"body":   respBody,
 	}, nil
+}
+
+type HTTPBuilder struct {
+	task *HTTP
+}
+
+func NewHTTP(name string) *HTTPBuilder {
+	task := &HTTP{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeHTTP,
+		},
+		client: &http.Client{},
+	}
+	task = task.Encoding("json")
+	return &HTTPBuilder{task: task}
+}
+
+func (b *HTTPBuilder) Timeout(timeout time.Duration) *HTTPBuilder {
+	b.task.TaskHeader.Timeout = timeout
+	b.task.client.Timeout = timeout
+	return b
+}
+
+func (b *HTTPBuilder) Request(method, uri string) *HTTPBuilder {
+	b.task.Input.Method = orchestrator.Expr[string]{Expr: method}
+	b.task.Input.URI = orchestrator.Expr[string]{Expr: uri}
+	return b
+}
+
+func (b *HTTPBuilder) Get(uri string) *HTTPBuilder {
+	return b.Request("GET", uri)
+}
+
+func (b *HTTPBuilder) Post(uri string) *HTTPBuilder {
+	return b.Request("POST", uri)
+}
+
+func (b *HTTPBuilder) Patch(uri string) *HTTPBuilder {
+	return b.Request("PATCH", uri)
+}
+
+func (b *HTTPBuilder) Put(uri string) *HTTPBuilder {
+	return b.Request("PUT", uri)
+}
+
+func (b *HTTPBuilder) Delete(uri string) *HTTPBuilder {
+	return b.Request("DELETE", uri)
+}
+
+func (b *HTTPBuilder) Header(key string, values ...string) *HTTPBuilder {
+	if b.task.Input.Header.Expr == nil {
+		b.task.Input.Header = orchestrator.Expr[map[string][]string]{Expr: make(map[string][]string)}
+	}
+	b.task.Input.Header.Expr.(map[string][]string)[key] = values
+	return b
+}
+
+func (b *HTTPBuilder) Body(body map[string]any) *HTTPBuilder {
+	b.task.Input.Body = orchestrator.Expr[map[string]any]{Expr: body}
+	return b
+}
+
+func (b *HTTPBuilder) Build() orchestrator.Task {
+	return b.task
 }

@@ -40,33 +40,6 @@ type Iterate struct {
 	} `json:"input"`
 }
 
-func NewIterate(name string) *Iterate {
-	return &Iterate{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeIterate,
-		},
-	}
-}
-
-func (i *Iterate) List(v any) *Iterate {
-	i.Input.Type = IterateTypeList
-	i.Input.Value = v
-	return i
-}
-
-func (i *Iterate) Map(v any) *Iterate {
-	i.Input.Type = IterateTypeMap
-	i.Input.Value = v
-	return i
-}
-
-func (i *Iterate) Range(v any) *Iterate {
-	i.Input.Type = IterateTypeRange
-	i.Input.Value = v
-	return i
-}
-
 func (i *Iterate) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s)",
@@ -158,4 +131,40 @@ func (i *Iterate) Execute(ctx context.Context, input orchestrator.Input) (orches
 		}
 	})
 	return orchestrator.Output{"iterator": iterator}, nil
+}
+
+type IterateBuilder struct {
+	task *Iterate
+}
+
+func NewIterate(name string) *IterateBuilder {
+	task := &Iterate{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeIterate,
+		},
+	}
+	return &IterateBuilder{task: task}
+}
+
+func (b *IterateBuilder) List(v any) *IterateBuilder {
+	b.task.Input.Type = IterateTypeList
+	b.task.Input.Value = v
+	return b
+}
+
+func (b *IterateBuilder) Map(v any) *IterateBuilder {
+	b.task.Input.Type = IterateTypeMap
+	b.task.Input.Value = v
+	return b
+}
+
+func (b *IterateBuilder) Range(v any) *IterateBuilder {
+	b.task.Input.Type = IterateTypeRange
+	b.task.Input.Value = v
+	return b
+}
+
+func (b *IterateBuilder) Build() orchestrator.Task {
+	return b.task
 }

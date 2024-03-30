@@ -29,7 +29,7 @@ func TestParallel_Execute(t *testing.T) {
 				builtin.NewFunc("three").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "number three"}, nil
 				}),
-			),
+			).Build(),
 			wantOutput: o.Output{
 				"one": o.Output{
 					"result": "number one",
@@ -54,7 +54,7 @@ func TestParallel_Execute(t *testing.T) {
 				builtin.NewFunc("three").Func(func(context.Context, o.Input) (o.Output, error) {
 					return nil, fmt.Errorf("the third error")
 				}),
-			),
+			).Build(),
 			wantErr: "the first error; the third error",
 		},
 		{
@@ -71,7 +71,7 @@ func TestParallel_Execute(t *testing.T) {
 
 					return o.Output{"result": "number three"}, nil
 				}),
-			),
+			).Build(),
 			wantErr: "context deadline exceeded",
 		},
 	}

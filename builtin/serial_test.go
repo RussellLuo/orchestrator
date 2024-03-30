@@ -34,7 +34,7 @@ func TestSerial_Execute(t *testing.T) {
 					}
 					return in.Value, nil
 				}),
-			),
+			).Build(),
 			wantOutput: o.Output{"hello": "world"},
 		},
 		{
@@ -54,7 +54,7 @@ func TestSerial_Execute(t *testing.T) {
 					}
 					return in.Value, nil
 				}),
-			),
+			).Build(),
 			wantErr: "error in say_name",
 		},
 		{
@@ -76,7 +76,7 @@ func TestSerial_Execute(t *testing.T) {
 					}
 					return in.Value, nil
 				}),
-			),
+			).Build(),
 			wantErr: "context deadline exceeded",
 		},
 	}

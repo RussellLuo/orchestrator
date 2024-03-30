@@ -34,30 +34,6 @@ type Loop struct {
 	} `json:"input"`
 }
 
-func NewLoop(name string) *Loop {
-	return &Loop{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeLoop,
-		},
-	}
-}
-
-func (l *Loop) Timeout(timeout time.Duration) *Loop {
-	l.TaskHeader.Timeout = timeout
-	return l
-}
-
-func (l *Loop) Iterator(task orchestrator.Task) *Loop {
-	l.Input.Iterator = task
-	return l
-}
-
-func (l *Loop) Body(task orchestrator.Task) *Loop {
-	l.Input.Body = task
-	return l
-}
-
 func (l *Loop) String() string {
 	return fmt.Sprintf(
 		"%s(name:%s, timeout:%s)",
@@ -111,4 +87,37 @@ End:
 	// Save the total iteration number.
 	output["iteration"] = i
 	return output, nil
+}
+
+type LoopBuilder struct {
+	task *Loop
+}
+
+func NewLoop(name string) *LoopBuilder {
+	task := &Loop{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeLoop,
+		},
+	}
+	return &LoopBuilder{task: task}
+}
+
+func (b *LoopBuilder) Timeout(timeout time.Duration) *LoopBuilder {
+	b.task.TaskHeader.Timeout = timeout
+	return b
+}
+
+func (b *LoopBuilder) Iterator(builder orchestrator.Builder) *LoopBuilder {
+	b.task.Input.Iterator = builder.Build()
+	return b
+}
+
+func (b *LoopBuilder) Body(builder orchestrator.Builder) *LoopBuilder {
+	b.task.Input.Body = builder.Build()
+	return b
+}
+
+func (b *LoopBuilder) Build() orchestrator.Task {
+	return b.task
 }

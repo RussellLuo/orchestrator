@@ -35,15 +35,6 @@ type Wait struct {
 	} `json:"input"`
 }
 
-func NewWait(name string) *Wait {
-	return &Wait{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeWait,
-		},
-	}
-}
-
 func (w *Wait) String() string {
 	return fmt.Sprintf("%s(name:%s)", w.Type, w.Name)
 }
@@ -81,4 +72,22 @@ func (w *Wait) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	}
 
 	return orchestrator.Output{"input": receivedInput}, nil
+}
+
+type WaitBuilder struct {
+	task *Wait
+}
+
+func NewWait(name string) *WaitBuilder {
+	task := &Wait{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeWait,
+		},
+	}
+	return &WaitBuilder{task: task}
+}
+
+func (b *WaitBuilder) Build() orchestrator.Task {
+	return b.task
 }

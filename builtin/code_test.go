@@ -23,7 +23,7 @@ func TestCode_Execute(t *testing.T) {
 				Code(`
 def _(env):
     return [x*2 for x in env.input.values]
-`),
+`).Build(),
 			inInput: map[string]any{
 				"values": []any{1, 2, 3},
 			},
@@ -37,7 +37,7 @@ def _(env):
     for x in env.input.values:
         x.k2 = "v2"
     return env.input.values
-`),
+`).Build(),
 			inInput: map[string]any{
 				"values": []any{
 					map[string]any{

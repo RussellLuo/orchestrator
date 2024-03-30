@@ -34,38 +34,6 @@ type Decision struct {
 	} `json:"input"`
 }
 
-func NewDecision(name string) *Decision {
-	return &Decision{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeDecision,
-		},
-	}
-}
-
-func (d *Decision) Timeout(timeout time.Duration) *Decision {
-	d.TaskHeader.Timeout = timeout
-	return d
-}
-
-func (d *Decision) Expression(s any) *Decision {
-	d.Input.Expression = orchestrator.Expr[any]{Expr: s}
-	return d
-}
-
-func (d *Decision) Case(c any, task orchestrator.Task) *Decision {
-	if d.Input.Cases == nil {
-		d.Input.Cases = make(map[any]orchestrator.Task)
-	}
-	d.Input.Cases[c] = task
-	return d
-}
-
-func (d *Decision) Default(task orchestrator.Task) *Decision {
-	d.Input.Default = task
-	return d
-}
-
 func (d *Decision) String() string {
 	casesInputStrings := make(map[any]string)
 	for v, t := range d.Input.Cases {
@@ -105,4 +73,45 @@ func (d *Decision) Execute(ctx context.Context, input orchestrator.Input) (orche
 	}
 
 	return trace.Wrap(task).Execute(ctx, input)
+}
+
+type DecisionBuilder struct {
+	task *Decision
+}
+
+func NewDecision(name string) *DecisionBuilder {
+	task := &Decision{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeDecision,
+		},
+	}
+	return &DecisionBuilder{task: task}
+}
+
+func (b *DecisionBuilder) Timeout(timeout time.Duration) *DecisionBuilder {
+	b.task.TaskHeader.Timeout = timeout
+	return b
+}
+
+func (b *DecisionBuilder) Expression(s any) *DecisionBuilder {
+	b.task.Input.Expression = orchestrator.Expr[any]{Expr: s}
+	return b
+}
+
+func (b *DecisionBuilder) Case(c any, builder orchestrator.Builder) *DecisionBuilder {
+	if b.task.Input.Cases == nil {
+		b.task.Input.Cases = make(map[any]orchestrator.Task)
+	}
+	b.task.Input.Cases[c] = builder.Build()
+	return b
+}
+
+func (b *DecisionBuilder) Default(builder orchestrator.Builder) *DecisionBuilder {
+	b.task.Input.Default = builder.Build()
+	return b
+}
+
+func (b *DecisionBuilder) Build() orchestrator.Task {
+	return b.task
 }

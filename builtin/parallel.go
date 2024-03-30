@@ -34,25 +34,6 @@ type Parallel struct {
 	} `json:"input"`
 }
 
-func NewParallel(name string) *Parallel {
-	return &Parallel{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeParallel,
-		},
-	}
-}
-
-func (p *Parallel) Timeout(timeout time.Duration) *Parallel {
-	p.TaskHeader.Timeout = timeout
-	return p
-}
-
-func (p *Parallel) Tasks(tasks ...orchestrator.Task) *Parallel {
-	p.Input.Tasks = tasks
-	return p
-}
-
 func (p *Parallel) String() string {
 	var inputStrings []string
 	for _, t := range p.Input.Tasks {
@@ -106,4 +87,36 @@ func (p *Parallel) execute(ctx context.Context, input orchestrator.Input) (orche
 		return nil, fmt.Errorf("%s", strings.Join(errors, "; "))
 	}
 	return output, nil
+}
+
+type ParallelBuilder struct {
+	task *Parallel
+}
+
+func NewParallel(name string) *ParallelBuilder {
+	task := &Parallel{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeParallel,
+		},
+	}
+	return &ParallelBuilder{task: task}
+}
+
+func (b *ParallelBuilder) Timeout(timeout time.Duration) *ParallelBuilder {
+	b.task.TaskHeader.Timeout = timeout
+	return b
+}
+
+func (b *ParallelBuilder) Tasks(builders ...orchestrator.Builder) *ParallelBuilder {
+	var tasks []orchestrator.Task
+	for _, builder := range builders {
+		tasks = append(tasks, builder.Build())
+	}
+	b.task.Input.Tasks = tasks
+	return b
+}
+
+func (b *ParallelBuilder) Build() orchestrator.Task {
+	return b.task
 }

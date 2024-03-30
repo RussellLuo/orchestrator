@@ -37,7 +37,7 @@ func TestTerminate(t *testing.T) {
 					}
 					return in.Value, nil
 				}),
-			),
+			).Build(),
 			wantOutput: o.Output{
 				"terminated": true,
 				"goodbye":    "world",

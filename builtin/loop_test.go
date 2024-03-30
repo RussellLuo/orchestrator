@@ -30,7 +30,7 @@ func TestLoop_Execute(t *testing.T) {
 						return nil, err
 					}
 					return o.Output{"value": value.Value}, nil
-				})),
+				})).Build(),
 			wantOutput: o.Output{
 				"iteration": 3,
 				"0":         map[string]any{"value": 0},
@@ -55,7 +55,7 @@ func TestLoop_Execute(t *testing.T) {
 						return nil, err
 					}
 					return o.Output{"value": value.Value}, nil
-				})),
+				})).Build(),
 			wantOutput: o.Output{
 				"iteration": 3,
 				"0":         map[string]any{"value": 3},
@@ -77,7 +77,7 @@ func TestLoop_Execute(t *testing.T) {
 						return nil, err
 					}
 					return o.Output{"value": value.Value}, nil
-				})),
+				})).Build(),
 			wantOutput: o.Output{
 				"iteration": 3,
 				"0":         map[string]any{"value": 6},

@@ -63,30 +63,6 @@ type Serial struct {
 	} `json:"input"`
 }
 
-func NewSerial(name string) *Serial {
-	return &Serial{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeSerial,
-		},
-	}
-}
-
-func (s *Serial) Timeout(timeout time.Duration) *Serial {
-	s.TaskHeader.Timeout = timeout
-	return s
-}
-
-func (s *Serial) Async(async bool) *Serial {
-	s.Input.Async = async
-	return s
-}
-
-func (s *Serial) Tasks(tasks ...orchestrator.Task) *Serial {
-	s.Input.Tasks = tasks
-	return s
-}
-
 func (s *Serial) String() string {
 	var inputStrings []string
 	for _, t := range s.Input.Tasks {
@@ -145,4 +121,41 @@ func (s *Serial) execute(ctx context.Context, input orchestrator.Input) (output 
 	}
 
 	return output, nil
+}
+
+type SerialBuilder struct {
+	task *Serial
+}
+
+func NewSerial(name string) *SerialBuilder {
+	task := &Serial{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeSerial,
+		},
+	}
+	return &SerialBuilder{task: task}
+}
+
+func (b *SerialBuilder) Timeout(timeout time.Duration) *SerialBuilder {
+	b.task.TaskHeader.Timeout = timeout
+	return b
+}
+
+func (b *SerialBuilder) Async(async bool) *SerialBuilder {
+	b.task.Input.Async = async
+	return b
+}
+
+func (b *SerialBuilder) Tasks(builders ...orchestrator.Builder) *SerialBuilder {
+	var tasks []orchestrator.Task
+	for _, builder := range builders {
+		tasks = append(tasks, builder.Build())
+	}
+	b.task.Input.Tasks = tasks
+	return b
+}
+
+func (b *SerialBuilder) Build() orchestrator.Task {
+	return b.task
 }

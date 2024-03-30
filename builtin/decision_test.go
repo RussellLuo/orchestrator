@@ -25,7 +25,7 @@ func TestDecision_Execute(t *testing.T) {
 				})).
 				Default(builtin.NewFunc("default").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "default"}, nil
-				})),
+				})).Build(),
 			wantOutput: o.Output{"result": "case_0"},
 		},
 		{
@@ -37,7 +37,7 @@ func TestDecision_Execute(t *testing.T) {
 				})).
 				Default(builtin.NewFunc("default").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "default"}, nil
-				})),
+				})).Build(),
 			wantOutput: o.Output{"result": "default"},
 		},
 		{
@@ -49,7 +49,7 @@ func TestDecision_Execute(t *testing.T) {
 				})).
 				Default(builtin.NewFunc("default").Func(func(context.Context, o.Input) (o.Output, error) {
 					return o.Output{"result": "default"}, nil
-				})),
+				})).Build(),
 			wantOutput: o.Output{"result": "case_0"},
 		},
 	}

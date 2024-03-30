@@ -87,9 +87,13 @@ type TaskHeader struct {
 func (h TaskHeader) Header() TaskHeader { return h }
 
 type Initializer interface {
-	// Init initializes an application with the given context ctx.
+	// Init initializes a task with the given registry r.
 	// It will return an error if it fails.
 	Init(r *Registry) error
+}
+
+type Builder interface {
+	Build() Task
 }
 
 type Task interface {

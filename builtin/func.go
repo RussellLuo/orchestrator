@@ -31,24 +31,33 @@ type Func struct {
 	} `json:input`
 }
 
-func NewFunc(name string) *Func {
-	return &Func{
-		TaskHeader: orchestrator.TaskHeader{
-			Name: name,
-			Type: TypeFunc,
-		},
-	}
-}
-
-func (f *Func) Func(ef func(context.Context, orchestrator.Input) (orchestrator.Output, error)) *Func {
-	f.Input.Func = ef
-	return f
-}
-
 func (f *Func) String() string {
 	return fmt.Sprintf("%s(name:%s)", f.TaskHeader.Type, f.TaskHeader.Name)
 }
 
 func (f *Func) Execute(ctx context.Context, input orchestrator.Input) (output orchestrator.Output, err error) {
 	return f.Input.Func(ctx, input)
+}
+
+type FuncBuilder struct {
+	task *Func
+}
+
+func NewFunc(name string) *FuncBuilder {
+	task := &Func{
+		TaskHeader: orchestrator.TaskHeader{
+			Name: name,
+			Type: TypeFunc,
+		},
+	}
+	return &FuncBuilder{task: task}
+}
+
+func (b *FuncBuilder) Func(ef func(context.Context, orchestrator.Input) (orchestrator.Output, error)) *FuncBuilder {
+	b.task.Input.Func = ef
+	return b
+}
+
+func (b *FuncBuilder) Build() orchestrator.Task {
+	return b.task
 }
