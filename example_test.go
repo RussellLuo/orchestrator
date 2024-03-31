@@ -55,6 +55,51 @@ func Example_trace() {
 	// Leanne Graham
 }
 
+func Example_yaml() {
+	r := orchestrator.NewRegistry()
+	builtin.MustRegisterSerial(r)
+	builtin.MustRegisterHTTP(r)
+
+	data := []byte(`
+name: get_todo_user
+type: serial
+timeout: 3s
+input:
+  tasks:
+  - name: get_todo
+    type: http
+    timeout: 2s
+    input:
+      method: GET
+      uri: https://jsonplaceholder.typicode.com/todos/${input.todoId}
+  - name: get_user
+    type: http
+    timeout: 2s
+    input:
+      method: GET
+      uri: https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}
+`)
+
+	flow, err := r.ConstructFromYAML(data)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	input := orchestrator.NewInput(map[string]any{"todoId": 1})
+	output, err := flow.Execute(context.Background(), input)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	body := output["body"].(map[string]any)
+	fmt.Println(body["name"])
+
+	// Output:
+	// Leanne Graham
+}
+
 func Example_json() {
 	r := orchestrator.NewRegistry()
 	builtin.MustRegisterSerial(r)

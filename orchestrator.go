@@ -9,6 +9,7 @@ import (
 
 	"github.com/RussellLuo/structool"
 	"github.com/xeipuuv/gojsonschema"
+	"sigs.k8s.io/yaml"
 )
 
 type Input struct {
@@ -166,12 +167,19 @@ func (r *Registry) Construct(m map[string]any) (Task, error) {
 	return task, nil
 }
 
+func (r *Registry) ConstructFromYAML(data []byte) (Task, error) {
+	var m map[string]any
+	if err := yaml.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	return r.Construct(m)
+}
+
 func (r *Registry) ConstructFromJSON(data []byte) (Task, error) {
 	var m map[string]any
 	if err := json.Unmarshal(data, &m); err != nil {
 		return nil, err
 	}
-
 	return r.Construct(m)
 }
 
@@ -181,6 +189,10 @@ func MustRegister(factory *TaskFactory) {
 
 func Construct(m map[string]any) (Task, error) {
 	return GlobalRegistry.Construct(m)
+}
+
+func ConstructFromYAML(data []byte) (Task, error) {
+	return GlobalRegistry.ConstructFromYAML(data)
 }
 
 func ConstructFromJSON(data []byte) (Task, error) {

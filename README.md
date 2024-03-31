@@ -95,6 +95,87 @@ Currently supported expression dialects:
     </details>
 
 
+## Flow Builders
+
+Orchestrator provides three ways to build a flow.
+
+
+### Go
+
+```go
+flow := builtin.NewSerial("get_todo_user").Timeout(3*time.Second).Tasks(
+	builtin.NewHTTP("get_todo").Timeout(2*time.Second).Get(
+		"https://jsonplaceholder.typicode.com/todos/${input.todoId}",
+	),
+	builtin.NewHTTP("get_user").Timeout(2*time.Second).Get(
+		"https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}",
+	),
+).Build()
+```
+
+See [Example](https://pkg.go.dev/github.com/RussellLuo/orchestrator#example-package) for the complete example.
+
+
+### YAML
+
+```yaml
+name: get_todo_user
+type: serial
+timeout: 3s
+input:
+  tasks:
+  - name: get_todo
+    type: http
+    timeout: 2s
+    input:
+      method: GET
+      uri: https://jsonplaceholder.typicode.com/todos/${input.todoId}
+  - name: get_user
+    type: http
+    timeout: 2s
+    input:
+      method: GET
+      uri: https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}
+```
+
+See [Example (Yaml)](https://pkg.go.dev/github.com/RussellLuo/orchestrator#example-package-Yaml) for the complete example.
+
+
+### JSON
+
+```json
+{
+  "name": "get_todo_user",
+  "type": "serial",
+  "timeout": "3s",
+  "input": {
+    "tasks": [
+      {
+        "name": "get_todo",
+        "type": "http",
+        "timeout": "2s",
+        "input": {
+          "method": "GET",
+          "uri": "https://jsonplaceholder.typicode.com/todos/${input.todoId}"
+        }
+      },
+      {
+        "name": "get_user",
+        "type": "http",
+        "timeout": "2s",
+        "input": {
+          "method": "GET",
+          "uri": "https://jsonplaceholder.typicode.com/users/${get_todo.body.userId}"
+        }
+      }
+    ]
+  }
+}
+```
+
+See [Example (Json)](https://pkg.go.dev/github.com/RussellLuo/orchestrator#example-package-Json) for the complete example.
+
+
 ## Documentation
 
 Checkout the [Godoc][2].
