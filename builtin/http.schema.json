@@ -15,6 +15,13 @@
         "type": "string",
         "description": "The HTTP request URI."
       },
+      "query": {
+        "type": "object",
+        "description": "The URL query parameters.",
+        "patternProperties": {
+          "^.*$": {}
+        }
+      },
       "header": {
         "type": "object",
         "description": "The HTTP request headers.",

@@ -65,6 +65,7 @@ type HTTP struct {
 		Encoding string                                 `json:"encoding"`
 		Method   orchestrator.Expr[string]              `json:"method"`
 		URI      orchestrator.Expr[string]              `json:"uri"`
+		Query    orchestrator.Expr[map[string]any]      `json:"query"`
 		Header   orchestrator.Expr[map[string][]string] `json:"header"`
 		Body     orchestrator.Expr[map[string]any]      `json:"body"`
 		// A filter expression for extracting fields from a server-sent event.
@@ -128,6 +129,9 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	if err := h.Input.URI.Evaluate(input); err != nil {
 		return nil, err
 	}
+	if err := h.Input.Query.Evaluate(input); err != nil {
+		return nil, err
+	}
 	if err := h.Input.Header.Evaluate(input); err != nil {
 		return nil, err
 	}
@@ -148,6 +152,13 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 	if err != nil {
 		return nil, err
 	}
+
+	q := req.URL.Query()
+	for key, value := range h.Input.Query.Value {
+		q.Add(key, fmt.Sprintf("%v", value))
+	}
+	req.URL.RawQuery = q.Encode()
+
 	for k, v := range h.Input.Header.Value {
 		for _, vv := range v {
 			req.Header.Add(k, vv)
@@ -307,6 +318,14 @@ func (b *HTTPBuilder) Put(uri string) *HTTPBuilder {
 
 func (b *HTTPBuilder) Delete(uri string) *HTTPBuilder {
 	return b.Request("DELETE", uri)
+}
+
+func (b *HTTPBuilder) Query(key string, value any) *HTTPBuilder {
+	if b.task.Input.Query.Expr == nil {
+		b.task.Input.Query = orchestrator.Expr[map[string]any]{Expr: make(map[string]any)}
+	}
+	b.task.Input.Query.Expr.(map[string]any)[key] = value
+	return b
 }
 
 func (b *HTTPBuilder) Header(key string, values ...string) *HTTPBuilder {
