@@ -233,10 +233,22 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 			reader := ndjson.NewReaderSize(resp.Body, 1<<16)
 
 			for reader.Next() {
-				data := reader.Bytes()
+				dataBytes := reader.Bytes()
+				data := string(dataBytes)
 				if len(data) > 0 {
-					// For compatibility, currently we send the data as a JSON string (i.e. mimic a server-sent event).
-					if continue_ := sender.Send(orchestrator.Output{"data": string(data)}, nil); !continue_ {
+					if h.Input.SSEFilter != "" {
+						evaluator := orchestrator.NewEvaluatorWithData(map[string]any{"data": data})
+						value, err := evaluator.Evaluate(h.Input.SSEFilter)
+						if err != nil {
+							sender.Send(nil, fmt.Errorf("failed to evaluate '%s': %v", h.Input.SSEFilter, err))
+							return
+						}
+						// We assume that the event data is always a string.
+						data = fmt.Sprintf("%v", value)
+					}
+
+					// For compatibility, currently we send the data as a string (i.e. mimic a server-sent event).
+					if continue_ := sender.Send(orchestrator.Output{"data": data}, nil); !continue_ {
 						return
 					}
 				}
