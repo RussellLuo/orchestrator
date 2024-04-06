@@ -7,6 +7,7 @@ require (
 	github.com/RussellLuo/structool v0.0.0-20230915010420-41b17257d885
 	github.com/antonmedv/expr v1.15.2
 	github.com/google/go-cmp v0.5.9
+	github.com/olivere/ndjson v1.0.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.starlark.net v0.0.0-20231121155337-90ade8b19d09
 	sigs.k8s.io/yaml v1.4.0

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/RussellLuo/orchestrator"
+	"github.com/olivere/ndjson"
 )
 
 const (
@@ -210,6 +211,29 @@ func (h *HTTP) Execute(ctx context.Context, input orchestrator.Input) (orchestra
 						return
 					}
 				}
+			}
+		})
+
+	case "application/x-ndjson": // Newline-delimited JSON
+		respBody = orchestrator.NewIterator(ctx, func(sender *orchestrator.IteratorSender) {
+			defer sender.End() // End the iteration
+
+			defer resp.Body.Close()
+			reader := ndjson.NewReaderSize(resp.Body, 1<<16)
+
+			for reader.Next() {
+				data := reader.Bytes()
+				if len(data) > 0 {
+					// For compatibility, currently we send the data as a JSON string (i.e. mimic a server-sent event).
+					if continue_ := sender.Send(orchestrator.Output{"data": string(data)}, nil); !continue_ {
+						return
+					}
+				}
+			}
+
+			if err := reader.Err(); err != nil {
+				sender.Send(nil, err)
+				return
 			}
 		})
 
