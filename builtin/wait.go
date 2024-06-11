@@ -88,8 +88,8 @@ func NewWait(name string) *WaitBuilder {
 	return &WaitBuilder{task: task}
 }
 
-func (b *WaitBuilder) Out(out map[string]any) *WaitBuilder {
-	b.task.Input.Output = orchestrator.Expr[map[string]any]{Expr: out}
+func (b *WaitBuilder) Output(output map[string]any) *WaitBuilder {
+	b.task.Input.Output = orchestrator.Expr[map[string]any]{Expr: output}
 	return b
 }
 
